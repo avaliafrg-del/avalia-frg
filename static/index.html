@@ -1,0 +1,3473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avalia FRG — cartão-resposta e correção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* --------------------------------------------------------------
+     Azul escuro e branco, como pedido. O azul é EXATAMENTE o da
+     logo (#013682): usar um azul próximo, mas diferente, deixaria a
+     marca parecendo deslocada dentro da própria tela.
+
+     O verde da logo aparece só como indicador positivo — nota boa,
+     item ativo. As cores da marca não foram alteradas em nenhum ponto.
+     -------------------------------------------------------------- */
+  --azul:#013682;            /* o azul da logo */
+  --azul-escuro:#012A66;     /* barra lateral e estados pressionados */
+  --azul-profundo:#011E4A;   /* rodapé institucional */
+  --azul-fundo:#E8EEF7;
+  --azul-linha:#3A5FA0;
+
+  --verde:#067821;           /* o verde da logo */
+  --verde-fundo:#E6F2E9;
+
+  --vermelho:#B3261E;
+  --vermelho-fundo:#FBEAE8;
+  --ambar:#8A6412;
+  --ambar-fundo:#FAF0D8;
+
+  --papel:#F2F5F9;           /* branco levemente azulado */
+  --superficie:#FFFFFF;
+  --tinta:#1B2A45;
+  --tinta-suave:#5A6B85;
+  --linha:#D4DCE8;
+  --raio:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--papel);color:var(--tinta);
+  font-family:'Archivo','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-0.015em}
+p{margin:0}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:inherit}
+
+/* ---------- faixa institucional ---------- */
+.faixa-institucional{
+  background:var(--azul-escuro);color:rgba(255,255,255,.88);
+  font-size:12.5px;letter-spacing:.02em;
+}
+.faixa-interna{
+  max-width:1440px;margin:0 auto;padding:7px 22px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.separador-faixa{opacity:.5}
+
+/* ---------- cabeçalho ---------- */
+.topo{background:var(--superficie);position:sticky;top:0;z-index:40;
+  box-shadow:0 1px 3px rgba(1,54,130,.10)}
+.topo-interno{max-width:1440px;margin:0 auto;padding:12px 22px;
+  display:flex;align-items:center;gap:16px}
+
+.marca{display:flex;align-items:center;text-decoration:none}
+.marca-logo{height:42px;width:auto;display:block}
+
+/* A faixa repete o traço azul-verde que fecha a logo, para o
+   cabeçalho e a marca lerem como uma peça só. */
+.faixa-marca{height:4px;background:linear-gradient(90deg,
+  var(--azul) 0%, var(--azul) 52%, var(--verde) 52%, var(--verde) 100%)}
+
+.usuario{display:flex;align-items:center;gap:10px;font-size:14px;
+  color:var(--tinta-suave);margin-left:auto}
+.etiqueta-papel{
+  background:var(--azul-fundo);color:var(--azul);font-size:11.5px;
+  font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;
+}
+
+.botao-menu{display:none;background:none;border:0;color:var(--azul);
+  padding:6px;border-radius:var(--raio);line-height:0}
+.botao-menu:hover{background:var(--azul-fundo)}
+
+/* ---------- menu lateral ---------- */
+.corpo{max-width:1440px;margin:0 auto;display:flex;align-items:flex-start}
+
+.lateral{
+  width:242px;flex-shrink:0;padding:20px 12px 60px;
+  position:sticky;top:59px;max-height:calc(100vh - 59px);overflow-y:auto;
+  background:var(--azul);color:#fff;
+}
+.grupo-menu{margin-bottom:4px}
+.grupo-menu/* ---------- tela de acesso ---------- */
+.cobertura{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+  justify-content:center;padding:22px;overflow-y:auto;
+  background:var(--azul);
+  /* Faixa clara atrás do cartão: quebra o azul chapado sem competir
+     com a logo, que é o elemento a ser olhado primeiro. */
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.10) 0, transparent 42%),
+    radial-gradient(circle at 84% 88%, rgba(6,120,33,.22) 0, transparent 46%);
+}
+.cartao-acesso{
+  background:var(--superficie);border-radius:10px;padding:32px;
+  width:100%;max-width:418px;box-shadow:0 18px 50px rgba(1,30,74,.30);
+  overflow:hidden;
+}
+.logo-acesso{display:block;width:100%;max-width:300px;margin:4px auto 22px;height:auto}
+.cartao-acesso .campo{margin-bottom:13px}
+.cartao-acesso .btn{width:100%;justify-content:center;margin-top:8px}
+.rodape-acesso{
+  margin-top:22px;padding-top:16px;border-top:1px solid var(--linha);
+  text-align:center;font-size:12.5px;line-height:1.6;color:var(--tinta-suave);
+}
+.oculto{display:none}
+
+.titulo-grupo{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  background:none;border:0;padding:9px 12px;border-radius:var(--raio);
+  font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);
+}
+.titulo-grupo:hover{background:rgba(255,255,255,.08);color:#fff}
+.titulo-grupo:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+.titulo-grupo .seta{transition:transform .18s ease;flex-shrink:0}
+.titulo-grupo[aria-expanded="false"] .seta{transform:rotate(-90deg)}
+
+.itens-grupo{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.itens-grupo > *{min-height:0}
+.grupo-menu.fechado .itens-grupo{grid-template-rows:0fr;overflow:hidden}
+
+.item-menu{
+  width:100%;display:flex;align-items:center;gap:10px;
+  background:none;border:0;padding:9px 12px 9px 14px;border-radius:var(--raio);
+  font-size:14.5px;color:rgba(255,255,255,.88);text-align:left;margin-bottom:2px;
+}
+.item-menu:hover{background:rgba(255,255,255,.10);color:#fff}
+.item-menu:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+.item-menu .ponto{width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.35);flex-shrink:0;transition:background .15s,transform .15s}
+.item-menu[aria-current="true"]{background:#fff;color:var(--azul);font-weight:700}
+.item-menu[aria-current="true"] .ponto{background:var(--verde);transform:scale(1.4)}
+.item-menu/* ---------- tela de acesso ---------- */
+.cobertura{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+  justify-content:center;padding:22px;overflow-y:auto;
+  background:var(--azul);
+  /* Faixa clara atrás do cartão: quebra o azul chapado sem competir
+     com a logo, que é o elemento a ser olhado primeiro. */
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.10) 0, transparent 42%),
+    radial-gradient(circle at 84% 88%, rgba(6,120,33,.22) 0, transparent 46%);
+}
+.cartao-acesso{
+  background:var(--superficie);border-radius:10px;padding:32px;
+  width:100%;max-width:418px;box-shadow:0 18px 50px rgba(1,30,74,.30);
+  overflow:hidden;
+}
+.logo-acesso{display:block;width:100%;max-width:300px;margin:4px auto 22px;height:auto}
+.cartao-acesso .campo{margin-bottom:13px}
+.cartao-acesso .btn{width:100%;justify-content:center;margin-top:8px}
+.rodape-acesso{
+  margin-top:22px;padding-top:16px;border-top:1px solid var(--linha);
+  text-align:center;font-size:12.5px;line-height:1.6;color:var(--tinta-suave);
+}
+.oculto{display:none}
+
+.cortina{position:fixed;inset:0;background:rgba(1,30,74,.5);z-index:35}
+
+@media(max-width:920px){
+  .botao-menu{display:block}
+  .lateral{position:fixed;top:0;left:0;bottom:0;z-index:38;width:266px;
+    max-height:none;padding-top:20px;transform:translateX(-100%);
+    transition:transform .22s ease;box-shadow:0 0 34px rgba(1,30,74,.35)}
+  .lateral.aberto{transform:translateX(0)}
+  .marca-logo{height:34px}
+}
+@media(prefers-reduced-motion:reduce){
+  .lateral,.itens-grupo,.titulo-grupo .seta{transition:none}
+}
+
+/* ---------- ornamentos ---------- */
+/* Existem para a página não parecer um formulário solto no branco.
+   Nenhum deles carrega informação — se forem removidos, nada se perde
+   além do acabamento. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  /* Bolhas de cartão-resposta, quase invisíveis: o motivo do produto
+     virando textura de fundo. */
+  background-image:radial-gradient(circle, rgba(1,54,130,.055) 1.6px, transparent 1.7px);
+  background-size:26px 26px;
+}
+
+.cabecalho-pagina{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:16px;margin-bottom:18px;padding-bottom:14px;
+  border-bottom:2px solid var(--linha);flex-wrap:wrap;
+}
+.cabecalho-pagina h1{font-size:23px;color:var(--azul)}
+.cabecalho-pagina .caminho{font-size:13px;color:var(--tinta-suave);margin-top:3px}
+.cabecalho-pagina .caminho b{color:var(--azul)}
+
+/* Filete azul-verde no topo de cada bloco: o mesmo traço da logo,
+   em escala pequena. */
+.bloco{position:relative;overflow:hidden}
+.bloco::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg, var(--azul) 0%, var(--azul) 58%,
+    var(--verde) 58%, var(--verde) 100%);
+  opacity:.85;
+}
+
+.rodape-institucional{
+  margin-top:46px;padding:28px 22px 34px;background:var(--azul-profundo);color:#fff;
+}
+.rodape-interno{
+  max-width:1440px;margin:0 auto;display:flex;align-items:center;
+  justify-content:space-between;gap:26px;flex-wrap:wrap;
+}
+.rodape-institucional .selo{
+  background:#fff;padding:12px 16px;border-radius:var(--raio);
+  display:flex;align-items:center;
+}
+.rodape-institucional .selo img{height:56px;width:auto;display:block}
+.rodape-institucional .dizeres{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,.8);max-width:520px}
+.rodape-institucional .dizeres b{color:#fff}
+
+/* ---------- layout ---------- */
+.conteudo{flex:1;min-width:0;padding:24px 26px 70px}
+.painel[hidden]{display:none}
+.duas-colunas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.duas-colunas{grid-template-columns:1fr}}
+
+.bloco{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);padding:21px}
+.bloco + .bloco{margin-top:18px}
+.bloco-titulo{font-size:17px;margin-bottom:4px}
+.bloco-ajuda{color:var(--tinta-suave);font-size:14px;margin-bottom:16px}
+
+/* ---------- formulário ---------- */
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo.largo{grid-column:1/-1}
+.campo label{font-size:13.5px;color:var(--tinta-suave);font-weight:500}
+.campo input,.campo select,.campo textarea{
+  border:1px solid var(--linha);border-radius:8px;padding:10px 12px;
+  background:var(--superficie);color:var(--tinta);width:100%;
+}
+.campo textarea{min-height:120px;resize:vertical;line-height:1.6}
+.campo input:focus,.campo select:focus,.campo textarea:focus{
+  outline:2px solid var(--azul);outline-offset:-1px;border-color:var(--azul)
+}
+.dica{font-size:12.5px;color:var(--tinta-suave)}
+
+/* ---------- gabarito ---------- */
+.gabarito{margin-top:18px}
+.gabarito-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.colar{display:flex;gap:8px;margin-bottom:13px}
+.colar input{
+  flex:1;min-width:0;border:1px solid var(--linha);border-radius:8px;padding:9px 12px;
+  font-family:ui-monospace,'Cascadia Mono',Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;
+}
+.colar input:focus{outline:2px solid var(--azul);outline-offset:-1px;border-color:var(--azul)}
+.colar .btn{padding:9px 16px}
+.gabarito-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:7px 18px;max-height:320px;overflow-y:auto;padding-right:4px}
+.linha-q{display:flex;align-items:center;gap:8px}
+.linha-q-num{width:26px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tinta-suave);font-size:14px;font-weight:600}
+.opcoes{display:flex;gap:5px}
+.conteudo-questao{
+  flex:1;min-width:90px;border:1px solid var(--linha);border-radius:7px;
+  padding:6px 9px;font-size:13px;color:var(--tinta);
+}
+.conteudo-questao:focus{outline:2px solid var(--azul);outline-offset:-1px;border-color:var(--azul)}
+.gabarito-grade.sem-conteudo .conteudo-questao{display:none}
+.opcao{
+  width:31px;height:31px;border-radius:50%;border:1.5px solid var(--linha);background:var(--superficie);
+  color:var(--tinta-suave);font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;
+  transition:background .12s,color .12s,border-color .12s;
+}
+.opcao:hover{border-color:var(--azul);color:var(--azul)}
+.opcao[aria-pressed="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+.opcao:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+/* ---------- botões ---------- */
+.acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{border:1px solid transparent;border-radius:8px;padding:11px 20px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn-principal{background:var(--azul);color:#fff}
+.btn-principal:hover{background:#123a85}
+.btn-neutro{background:var(--superficie);border-color:var(--linha);color:var(--tinta)}
+.btn-neutro:hover{border-color:var(--tinta-suave)}
+.btn-perigo{background:transparent;border-color:transparent;color:var(--vermelho);padding:4px 8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
+.btn-texto{background:none;border:0;color:var(--azul);font-weight:600;padding:4px 0;text-decoration:underline}
+
+/* ---------- listas ---------- */
+.lista{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.lista li{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:8px 12px;background:var(--papel);border-radius:7px}
+.lista .nome{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lista .marca-pequena{font-size:12.5px;color:var(--tinta-suave)}
+
+/* ---------- câmera ---------- */
+.camera-caixa{position:relative;background:#0d141d;border-radius:var(--raio);overflow:hidden;aspect-ratio:3/4;max-height:62vh;margin:0 auto}
+.camera-caixa video{width:100%;height:100%;object-fit:cover;display:block}
+.guia{position:absolute;inset:9% 7%;border:2px dashed rgba(255,255,255,.5);border-radius:6px;pointer-events:none}
+.guia-canto{position:absolute;width:24px;height:24px;border:3px solid #fff}
+.guia-canto.tl{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.guia-canto.tr{top:-2px;right:-2px;border-left:0;border-bottom:0}
+.guia-canto.bl{bottom:-2px;left:-2px;border-right:0;border-top:0}
+.guia-canto.br{bottom:-2px;right:-2px;border-left:0;border-top:0}
+.selo{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:14px;
+  background:rgba(13,20,29,.82);color:#fff;padding:7px 15px;border-radius:20px;font-size:13.5px;font-weight:600;
+}
+.selo.pronto{background:var(--verde);}
+
+/* ---------- prévia ---------- */
+.previa-moldura{background:var(--papel);border-radius:8px;min-height:320px;display:flex;align-items:center;justify-content:center;padding:14px}
+.previa-moldura img{max-width:100%;border-radius:4px;box-shadow:0 2px 12px rgba(22,32,46,.16);display:block}
+.previa-vazia{color:var(--tinta-suave);font-size:14.5px;text-align:center;max-width:250px}
+
+/* ---------- envio ---------- */
+.solta{border:2px dashed var(--linha);border-radius:var(--raio);padding:30px 20px;text-align:center;background:var(--superficie);transition:border-color .15s,background .15s}
+.solta.ativa{border-color:var(--azul);background:var(--azul-fundo)}
+.solta-titulo{font-size:16.5px;font-weight:600;margin-bottom:5px}
+.solta-ajuda{color:var(--tinta-suave);font-size:14px;margin-bottom:14px}
+
+/* ---------- resultado ---------- */
+.nota-cartao{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.nota-marca{position:relative;width:146px;height:114px;flex-shrink:0}
+.nota-marca svg{position:absolute;inset:0;width:100%;height:100%}
+.nota-valor{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:45px;font-weight:700;color:var(--vermelho);font-variant-numeric:tabular-nums}
+.nota-resumo{display:flex;flex-direction:column;gap:3px}
+.nota-linha{font-size:15px;color:var(--tinta-suave)}
+.nota-titulo{font-size:19px;font-weight:700;color:var(--tinta)}
+
+.contadores{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.contador{padding:7px 14px;border-radius:7px;font-size:14px;font-weight:600}
+.c-acerto{background:var(--verde-fundo);color:var(--verde)}
+.c-erro{background:var(--vermelho-fundo);color:var(--vermelho)}
+.c-branco{background:var(--papel);color:var(--tinta-suave)}
+.c-rasura{background:var(--ambar-fundo);color:var(--ambar)}
+
+.questoes{display:flex;flex-wrap:wrap;gap:5px;margin-top:18px}
+.q{min-width:44px;padding:6px 7px;border-radius:7px;text-align:center;font-size:12.5px;line-height:1.3;font-weight:600}
+.q span{display:block;font-size:11px;font-weight:500;opacity:.85}
+.q-correto{background:var(--verde-fundo);color:var(--verde)}
+.q-incorreto{background:var(--vermelho-fundo);color:var(--vermelho)}
+.q-em_branco{background:var(--papel);color:var(--tinta-suave)}
+.q-rasura{background:var(--ambar-fundo);color:var(--ambar)}
+
+/* ---------- tabelas ---------- */
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14.5px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--linha)}
+th{font-size:12.5px;color:var(--tinta-suave);font-weight:600}
+td.numero{font-variant-numeric:tabular-nums;text-align:right}
+tr.pendente td{color:var(--tinta-suave)}
+.linha-clicavel{cursor:pointer}
+.linha-clicavel:hover{background:var(--papel)}
+
+.barra{height:7px;border-radius:4px;background:var(--papel);overflow:hidden;min-width:70px}
+.barra span{display:block;height:100%;background:var(--verde)}
+.barra.baixo span{background:var(--vermelho)}
+
+.resumo-numeros{display:flex;gap:22px;flex-wrap:wrap;margin:4px 0 8px}
+.resumo-numeros div{display:flex;flex-direction:column}
+.resumo-numeros strong{font-size:24px;font-variant-numeric:tabular-nums}
+.resumo-numeros span{font-size:12.5px;color:var(--tinta-suave)}
+
+/* ---------- avisos ---------- */
+.aviso{border-radius:8px;padding:12px 15px;font-size:14.5px;margin-top:14px;display:flex;gap:10px;align-items:flex-start}
+.aviso-erro{background:var(--vermelho-fundo);color:var(--vermelho)}
+.aviso-atencao{background:var(--ambar-fundo);color:var(--ambar)}
+.aviso-ok{background:var(--verde-fundo);color:var(--verde)}
+.aviso strong{font-weight:700}
+
+.carregando{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:girar .7s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.carregando{animation-duration:2s}}
+
+.passos{list-style:none;padding:0;margin:12px 0 0;counter-reset:passo}
+.passos li{counter-increment:passo;position:relative;padding-left:33px;margin-bottom:10px;font-size:14.5px;color:var(--tinta-suave)}
+.passos li::before{
+  content:counter(passo);position:absolute;left:0;top:1px;width:23px;height:23px;border-radius:50%;
+  background:var(--azul-fundo);color:var(--azul);display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+}
+.faixa{
+  background:var(--vermelho-fundo);color:var(--vermelho);
+  padding:14px 22px;font-size:14.5px;line-height:1.55;
+  border-bottom:1px solid rgba(196,43,51,.25);
+}
+.faixa strong{font-weight:700}
+.faixa code{background:rgba(196,43,51,.12);padding:1px 6px;border-radius:4px}
+/* ---------- acesso ---------- */
+.cobertura{
+  position:fixed;inset:0;z-index:60;padding:24px;overflow-y:auto;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#F4F7FC 0%,#E3ECF9 55%,#D8E5F6 100%);
+}
+
+/* Bolhas: só enfeite, atrás do cartão. Preenchem o vazio da tela de
+   login sem disputar atenção com o formulário. */
+.fundo-acesso{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.bolha{position:absolute;border-radius:50%;opacity:.07}
+.bolha.b1{width:420px;height:420px;background:var(--azul);top:-140px;left:-120px}
+.bolha.b2{width:300px;height:300px;background:var(--verde);bottom:-110px;right:-80px}
+.bolha.b3{width:190px;height:190px;background:var(--azul-medio);top:14%;right:9%}
+.bolha.b4{width:130px;height:130px;background:var(--verde);bottom:18%;left:12%}
+
+.cartao-acesso{
+  position:relative;background:var(--superficie);border:1px solid var(--azul-borda);
+  border-radius:12px;padding:38px 34px 26px;width:100%;max-width:430px;
+  box-shadow:0 12px 40px rgba(1,54,130,.13);
+}
+/* Fio superior nas cores da marca, como o traço da logo. */
+.cartao-acesso::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:5px;border-radius:12px 12px 0 0;
+  background:linear-gradient(90deg,var(--azul) 0%,var(--azul) 58%,var(--verde) 58%,var(--verde) 100%);
+}
+.logo-login{display:block;width:100%;max-width:320px;height:auto;margin:6px auto 26px}
+.cartao-acesso .campo{margin-bottom:13px}
+.cartao-acesso .btn{width:100%;justify-content:center;margin-top:8px}
+.rodape-acesso{
+  margin-top:22px;padding-top:16px;border-top:1px solid var(--linha);
+  text-align:center;font-size:11.5px;color:var(--tinta-suave);line-height:1.5;
+}
+
+/* ---------- detalhes de página ---------- */
+.rodape-site{
+  border-top:1px solid var(--linha);background:var(--superficie);margin-top:40px;
+}
+.rodape-interno{
+  max-width:1440px;margin:0 auto;padding:22px;display:flex;align-items:center;
+  gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--tinta-suave);
+}
+.rodape-interno img{height:38px;width:auto;opacity:.85}
+.rodape-interno .direita{margin-left:auto;text-align:right;line-height:1.5}
+
+/* Cabeçalho de página: dá um respiro no topo de cada tela e evita que
+   o conteúdo comece colado no menu. */
+.cabecalho-pagina{
+  display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;
+  padding:4px 0 18px;margin-bottom:6px;border-bottom:1px solid var(--linha);
+}
+.cabecalho-pagina h1{font-size:23px;letter-spacing:-.02em}
+.cabecalho-pagina .subtitulo{font-size:14px;color:var(--tinta-suave);padding-bottom:3px}
+.trilha{
+  margin-left:auto;font-size:12.5px;color:var(--tinta-suave);
+  white-space:nowrap;padding-bottom:4px;
+}
+
+.bloco{
+  background:var(--superficie);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:22px;box-shadow:var(--sombra);
+}
+.bloco-titulo{font-size:17px;margin-bottom:4px;color:var(--tinta)}
+
+/* ---------- histórico ---------- */
+.evolucao{background:var(--papel);border-radius:8px;padding:16px;margin-top:14px}
+.evolucao svg{display:block;width:100%;height:auto;overflow:visible}
+.selo-tendencia{
+  display:inline-block;padding:4px 11px;border-radius:20px;
+  font-size:12.5px;font-weight:600;margin-left:8px;vertical-align:middle;
+}
+.t-subindo{background:var(--verde-fundo);color:var(--verde)}
+.t-caindo{background:var(--vermelho-fundo);color:var(--vermelho)}
+.t-estavel{background:var(--papel);color:var(--tinta-suave)}
+/* ---------- análise ---------- */
+.filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px}
+.filtros .campo{flex:1;min-width:150px;margin:0}
+
+.barra-conteudo{
+  display:grid;grid-template-columns:minmax(120px,1.4fr) 60px 1fr auto;
+  gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--linha);
+}
+.barra-conteudo:last-child{border-bottom:0}
+.barra-conteudo .rotulo{font-weight:600;font-size:14.5px}
+.barra-conteudo .valor{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;font-size:15px}
+.trilha{height:9px;border-radius:5px;background:var(--papel);overflow:hidden}
+.trilha span{display:block;height:100%;border-radius:5px}
+.n-critico span{background:var(--vermelho)}
+.n-atencao span{background:#c9922b}
+.n-adequado span{background:var(--verde)}
+.n-critico .valor{color:var(--vermelho)}
+.n-atencao .valor{color:var(--ambar)}
+
+.etiqueta{
+  font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;
+}
+.e-critico{background:var(--vermelho-fundo);color:var(--vermelho)}
+.e-atencao{background:var(--ambar-fundo);color:var(--ambar)}
+.e-adequado{background:var(--verde-fundo);color:var(--verde)}
+.e-amostra{background:var(--papel);color:var(--tinta-suave)}
+
+.orientacao{
+  border-left:3px solid var(--linha);padding:12px 0 12px 15px;margin-bottom:14px;
+}
+.orientacao.p-critico{border-left-color:var(--vermelho)}
+.orientacao.p-atencao{border-left-color:#c9922b}
+.orientacao p{font-size:14.5px;line-height:1.6}
+.orientacao .topo-linha{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.orientacao .btn-texto{font-size:13px}
+
+.aviso-classificar{
+  background:var(--azul-fundo);color:var(--azul);border-radius:8px;
+  padding:12px 15px;font-size:14px;margin-bottom:16px;
+}
+/* ---------- cartão do professor ---------- */
+.escolha-cartao{display:flex;flex-direction:column;gap:10px;margin:14px 0 4px}
+.escolha{
+  display:flex;gap:11px;align-items:flex-start;padding:13px 15px;
+  border:1.5px solid var(--linha);border-radius:9px;cursor:pointer;
+}
+.escolha:hover{border-color:var(--tinta-suave)}
+.escolha input{margin-top:3px;flex-shrink:0}
+.escolha.ativa{border-color:var(--azul);background:var(--azul-fundo)}
+.escolha strong{display:block;font-size:14.5px;margin-bottom:2px}
+.escolha span{font-size:13px;color:var(--tinta-suave);line-height:1.5}
+.bloco-perigo{border-color:rgba(196,43,51,.35)}
+.btn-apagar{background:var(--vermelho);color:#fff;border-color:var(--vermelho)}
+.btn-apagar:hover{background:#a92026}
+.caixa-escolas{
+  border:1px solid var(--linha);border-radius:8px;padding:10px 12px;
+  max-height:170px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;
+}
+.caixa-escolas label{display:flex;align-items:center;gap:9px;font-size:14.5px;color:var(--tinta);cursor:pointer}
+.caixa-escolas input{width:16px;height:16px;flex-shrink:0}
+
+.faixa-erro{
+  display:inline-block;height:8px;background:var(--azul-fundo);border-radius:4px;
+  position:relative;min-width:40px;
+}
+.faixa-erro i{position:absolute;top:-3px;width:3px;height:14px;background:var(--azul);border-radius:2px}
+.empate{color:var(--tinta-suave);font-weight:600}
+.real{color:var(--vermelho);font-weight:700}
+/* ---------- modo explicação ---------- */
+.btn-explicacao{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  background:var(--superficie);border:1px solid var(--linha);color:var(--tinta);
+  padding:7px 14px;border-radius:var(--raio);font-size:14px;font-weight:600;
+}
+.btn-explicacao:hover{border-color:var(--azul);color:var(--azul)}
+.btn-explicacao[aria-pressed="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+
+.caixa-explicacao{
+  background:var(--azul-fundo);border-left:4px solid var(--azul);
+  border-radius:var(--raio);padding:16px 18px;margin-bottom:18px;font-size:14.5px;
+  line-height:1.62;color:var(--tinta);
+}
+.caixa-explicacao h3{font-size:16px;margin:0 0 8px}
+.caixa-explicacao ol,.caixa-explicacao ul{margin:10px 0 0;padding-left:20px}
+.caixa-explicacao li{margin-bottom:7px}
+.caixa-explicacao .rotulo-passo{font-weight:700}
+.caixa-explicacao code{background:rgba(24,83,126,.12);padding:1px 5px;border-radius:3px}
+.caixa-explicacao .alerta{
+  background:var(--ambar-fundo);border-left:3px solid var(--ambar);
+  padding:10px 13px;border-radius:4px;margin-top:12px;
+}
+
+.artigo-ajuda{background:var(--superficie);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:22px;margin-bottom:16px}
+.artigo-ajuda h2{font-size:19px;margin-bottom:8px;color:var(--azul)}
+.artigo-ajuda .resumo{color:var(--tinta-suave);font-size:14.5px;line-height:1.6;margin-bottom:16px}
+.artigo-ajuda h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--tinta-suave);margin:20px 0 10px}
+.passo-ajuda{display:flex;gap:12px;margin-bottom:12px;font-size:14.5px;line-height:1.6}
+.passo-ajuda .numero{
+  flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--verde);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:700;margin-top:1px;
+}
+.campo-ajuda{display:flex;gap:10px;margin-bottom:9px;font-size:14.5px;line-height:1.55}
+.campo-ajuda b{flex-shrink:0;min-width:180px;color:var(--tinta)}
+.cuidado-ajuda{
+  background:var(--ambar-fundo);border-left:3px solid var(--ambar);
+  padding:11px 14px;border-radius:4px;margin-bottom:9px;font-size:14.5px;line-height:1.55;
+}
+.pergunta-ajuda{border-top:1px solid var(--linha);padding-top:12px;margin-top:12px;font-size:14.5px}
+.pergunta-ajuda .q{font-weight:700;margin-bottom:4px}
+.pergunta-ajuda .a{color:var(--tinta-suave);line-height:1.6}
+
+@media print{
+  .topo,.lateral,.acoes,.cortina{display:none !important}
+  .artigo-ajuda{break-inside:avoid;border:0;padding:0 0 18px}
+  .conteudo{padding:0}
+}
+/* ---------- tela de acesso ---------- */
+.cobertura{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+  justify-content:center;padding:22px;overflow-y:auto;
+  background:var(--azul);
+  /* Faixa clara atrás do cartão: quebra o azul chapado sem competir
+     com a logo, que é o elemento a ser olhado primeiro. */
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.10) 0, transparent 42%),
+    radial-gradient(circle at 84% 88%, rgba(6,120,33,.22) 0, transparent 46%);
+}
+.cartao-acesso{
+  background:var(--superficie);border-radius:10px;padding:32px;
+  width:100%;max-width:418px;box-shadow:0 18px 50px rgba(1,30,74,.30);
+  overflow:hidden;
+}
+.logo-acesso{display:block;width:100%;max-width:300px;margin:4px auto 22px;height:auto}
+.cartao-acesso .campo{margin-bottom:13px}
+.cartao-acesso .btn{width:100%;justify-content:center;margin-top:8px}
+.rodape-acesso{
+  margin-top:22px;padding-top:16px;border-top:1px solid var(--linha);
+  text-align:center;font-size:12.5px;line-height:1.6;color:var(--tinta-suave);
+}
+.oculto{display:none}
+</style>
+</head>
+<body>
+
+<div class="faixa-institucional">
+  <div class="faixa-interna">
+    <span>Prefeitura de Fazenda Rio Grande</span>
+    <span class="separador-faixa">·</span>
+    <span>Secretaria Municipal de Educação</span>
+  </div>
+</div>
+
+<header class="topo">
+  <div class="topo-interno">
+    <button class="botao-menu" id="btnMenu" aria-label="Abrir menu" aria-expanded="false">
+      <svg width="20" height="16" viewBox="0 0 20 16" aria-hidden="true">
+        <path d="M0 1h20M0 8h20M0 15h20" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+
+    <!-- A logo fica sobre BRANCO sempre. O azul dela é o mesmo azul do
+         site, então sobre a barra escura ela desapareceria. -->
+    <a class="marca" href="/" aria-label="Avalia FRG — página inicial">
+      <img src="/static/logo-marca.png" alt="Avalia FRG" class="marca-logo">
+    </a>
+
+    <button class="btn-explicacao" id="btnExplicacao" aria-pressed="false">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M6.2 6.1a1.9 1.9 0 113.1 1.5c-.6.5-1.3.8-1.3 1.6" fill="none"
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="8" cy="11.6" r=".9" fill="currentColor"/>
+      </svg>
+      <span id="rotuloExplicacao">Modo explicação</span>
+    </button>
+
+    <div class="usuario oculto" id="areaUsuario">
+      <span class="etiqueta-papel" id="etiquetaPapel"></span>
+      <span id="nomeUsuario"></span>
+      <button class="btn-texto" id="btnSair">Sair</button>
+    </div>
+  </div>
+
+  <!-- Faixa azul-verde: é o traço que fecha a logo, repetido aqui para
+       o cabeçalho e a marca parecerem a mesma peça. -->
+  <div class="faixa-marca" aria-hidden="true"></div>
+</header>
+
+<div class="cortina oculto" id="cortinaMenu"></div>
+
+<div id="telaAcesso" class="cobertura oculto">
+  <div class="cartao-acesso">
+    <!-- A logo completa, centralizada. Fica sobre branco porque o azul
+         dela é o mesmo do site: sobre fundo escuro, sumiria. -->
+    <img src="/static/logo-avalia.png" alt="Avalia FRG — Plataforma Municipal de
+         Simulados e Acompanhamento da Aprendizagem" class="logo-acesso">
+
+    <div class="faixa-marca" style="margin:0 -32px 24px"></div>
+
+    <h2 class="bloco-titulo" id="tituloAcesso">Entrar</h2>
+    <p class="bloco-ajuda" id="ajudaAcesso">Use o email cadastrado.</p>
+
+    <div class="campo oculto" id="campoNome">
+      <label for="acessoNome">Seu nome</label>
+      <input id="acessoNome" autocomplete="name">
+    </div>
+    <div class="campo">
+      <label for="acessoEmail">Email</label>
+      <input id="acessoEmail" type="email" autocomplete="username">
+    </div>
+    <div class="campo">
+      <label for="acessoSenha">Senha</label>
+      <input id="acessoSenha" type="password" autocomplete="current-password">
+      <span class="dica oculto" id="dicaSenha">Mínimo de 8 caracteres.</span>
+    </div>
+    <div class="campo" id="campoTicket">
+      <label for="acessoTicket">Ticket de acesso</label>
+      <input id="acessoTicket" class="codigo" placeholder="PF-ABCD-EFGH-IJKL"
+             autocomplete="off" spellcheck="false">
+      <span class="dica">Fornecido por quem administra o sistema.</span>
+    </div>
+
+    <button class="btn btn-principal" id="btnAcesso">Entrar</button>
+    <div id="avisoAcesso"></div>
+
+    <p class="rodape-acesso">
+      Secretaria Municipal de Educação<br>
+      Prefeitura de Fazenda Rio Grande
+    </p>
+  </div>
+</div>
+
+<div id="faixaAviso" class="faixa oculto"></div>
+
+<div class="corpo">
+
+<nav class="lateral" id="menuLateral" aria-label="Menu principal">
+  <div class="grupo-menu" data-grupo="cadastro">
+    <button class="titulo-grupo" aria-expanded="true">
+      <span>Cadastro</span>
+      <svg class="seta" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="itens-grupo">
+      <button class="item-menu" data-painel="turmas" aria-current="true">
+        <span class="ponto"></span>Turmas e alunos
+      </button>
+    </div>
+  </div>
+
+  <div class="grupo-menu" data-grupo="avaliacao">
+    <button class="titulo-grupo" aria-expanded="true">
+      <span>Avaliação</span>
+      <svg class="seta" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="itens-grupo">
+      <button class="item-menu" data-painel="provas"><span class="ponto"></span>Criar prova</button>
+      <button class="item-menu" data-painel="corrigir"><span class="ponto"></span>Corrigir provas</button>
+    </div>
+  </div>
+
+  <div class="grupo-menu" data-grupo="resultados">
+    <button class="titulo-grupo" aria-expanded="true">
+      <span>Resultados</span>
+      <svg class="seta" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="itens-grupo">
+      <button class="item-menu" data-painel="boletim"><span class="ponto"></span>Boletim da turma</button>
+      <button class="item-menu" data-painel="alunos"><span class="ponto"></span>Histórico do aluno</button>
+      <button class="item-menu" data-painel="analise"><span class="ponto"></span>Análise pedagógica</button>
+      <button class="item-menu" data-painel="comparativo"><span class="ponto"></span>Comparar escolas</button>
+    </div>
+  </div>
+
+  <div class="grupo-menu" data-grupo="ajuda">
+    <button class="titulo-grupo" aria-expanded="true">
+      <span>Ajuda</span>
+      <svg class="seta" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="itens-grupo">
+      <button class="item-menu" data-painel="ajuda"><span class="ponto"></span>Como usar</button>
+    </div>
+  </div>
+
+  <div class="grupo-menu oculto" data-grupo="sistema" id="grupoSistema">
+    <button class="titulo-grupo" aria-expanded="true">
+      <span>Sistema</span>
+      <svg class="seta" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="itens-grupo">
+      <button class="item-menu" data-painel="acessos" id="abaAcessos">
+        <span class="ponto"></span>Usuários e acessos
+      </button>
+    </div>
+  </div>
+  <div class="selo-lateral">
+    <img src="/static/brasao.png" alt="">
+    <span>Prefeitura de<br>Fazenda Rio Grande</span>
+  </div>
+</nav>
+
+<main class="conteudo">
+<div class="cabecalho-pagina" id="cabecalhoPagina">
+  <div>
+    <h1 id="tituloPagina">Turmas e alunos</h1>
+    <p class="caminho" id="caminhoPagina"></p>
+  </div>
+  <p class="caminho" id="contextoPagina"></p>
+</div>
+
+  <div class="cabecalho-pagina">
+    <h1 id="tituloPagina">Turmas e alunos</h1>
+    <span class="subtitulo" id="subtituloPagina">Cadastro da escola, das turmas e dos alunos</span>
+    <span class="trilha" id="dataHoje"></span>
+  </div>
+
+<!-- ==================== TURMAS ==================== -->
+<section class="painel" id="painel-turmas">
+  <div class="duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Escola e turma</h2>
+        <p class="bloco-ajuda">As notas ficam guardadas nesta organização.</p>
+        <div class="campos">
+          <div class="campo largo">
+            <label for="selEscola">Escola</label>
+            <select id="selEscola"></select>
+          </div>
+          <div class="campo">
+            <label for="novaEscola">Nova escola</label>
+            <input id="novaEscola" placeholder="EM Vila Nova">
+          </div>
+          <div class="campo" style="justify-content:flex-end">
+            <button class="btn btn-neutro" id="btnCriarEscola">Adicionar escola</button>
+          </div>
+
+          <div class="campo largo">
+            <label for="selTurma">Turma</label>
+            <select id="selTurma"></select>
+          </div>
+          <div class="campo">
+            <label for="novaTurma">Nova turma</label>
+            <input id="novaTurma" placeholder="8º ano B">
+            <span class="dica">Apelido da turma.</span>
+          </div>
+          <div class="campo">
+            <label for="novoAnoEscolar">Ano escolar</label>
+            <select id="novoAnoEscolar"></select>
+            <span class="dica">Permite comparar o mesmo ano entre escolas.</span>
+          </div>
+          <div class="campo largo">
+            <button class="btn btn-neutro" id="btnCriarTurma">Adicionar turma</button>
+          </div>
+        </div>
+        <div id="avisoTurmas"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Alunos da turma</h2>
+        <p class="bloco-ajuda">Cole a lista da secretaria, um nome por linha.</p>
+        <div class="campo largo">
+          <textarea id="listaNomes" placeholder="Ana Beatriz Souza&#10;Carlos Eduardo Lima&#10;Mariana Alves"></textarea>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnAddAlunos">Adicionar à turma</button>
+        </div>
+        <ul class="lista" id="listaAlunos"></ul>
+        <div id="avisoAlunos"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PROVAS ==================== -->
+<section class="painel" id="painel-provas" hidden>
+  <div class="duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Nova prova</h2>
+        <p class="bloco-ajuda" id="ajudaTurmaProva">Para a turma selecionada na aba Turmas.</p>
+        <div class="campos">
+          <div class="campo largo">
+            <label for="tituloProva">Título</label>
+            <input id="tituloProva" value="Avaliação bimestral" maxlength="60">
+          </div>
+          <div class="campo">
+            <label for="disciplinaProva">Disciplina</label>
+            <input id="disciplinaProva" placeholder="Matemática" maxlength="40">
+          </div>
+          <div class="campo">
+            <label for="qtdQuestoes">Quantas questões</label>
+            <input id="qtdQuestoes" type="number" min="1" value="10">
+            <span class="dica" id="ajudaQtd"></span>
+          </div>
+        </div>
+
+        <div class="gabarito">
+          <div class="gabarito-topo">
+            <div>
+              <h2 class="bloco-titulo">Gabarito</h2>
+              <p class="bloco-ajuda" style="margin:0">Toque na letra certa de cada questão.</p>
+            </div>
+            <button class="btn-texto" id="btnLimparGabarito">Limpar tudo</button>
+          </div>
+          <div class="colar">
+            <input id="colarGabarito" placeholder="Ou cole tudo de uma vez: ABCDEABCDE">
+            <button class="btn btn-neutro" id="btnColar">Aplicar</button>
+          </div>
+          <label class="dica" style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+            <input type="checkbox" id="mostrarConteudos" checked>
+            Classificar o conteúdo de cada questão (frações, ortografia…)
+          </label>
+          <datalist id="conteudosSugeridos"></datalist>
+          <div class="gabarito-grade" id="gradeGabarito"></div>
+        </div>
+
+        <div class="escolha-cartao">
+          <label class="escolha ativa" id="opcaoPadrao">
+            <input type="radio" name="modeloCartao" value="padrao" checked>
+            <div>
+              <strong>Usar o cartão-resposta do sistema</strong>
+              <span>Gerado automaticamente, já com as marcas de leitura.</span>
+            </div>
+          </label>
+          <label class="escolha" id="opcaoProprio">
+            <input type="radio" name="modeloCartao" value="proprio">
+            <div>
+              <strong>Usar o meu cartão-resposta</strong>
+              <span>Envie o seu modelo em branco. O sistema mantém o layout
+                    exatamente como está e apenas acrescenta, nas margens, o QR Code
+                    e os quatro quadrados pretos que permitem endireitar a foto.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="campo largo oculto" id="campoCartaoProprio">
+          <label for="arquivoCartao">Seu cartão-resposta em branco</label>
+          <input id="arquivoCartao" type="file" accept="application/pdf,image/*">
+          <span class="dica">PDF ou imagem, sem nenhuma bolha preenchida.</span>
+        </div>
+
+        <div class="campo largo" style="margin-top:18px">
+          <label for="arquivoProva">Anexar o documento da prova (opcional)</label>
+          <input id="arquivoProva" type="file" accept="application/pdf,image/*">
+          <span class="dica">O PDF sai com a prova primeiro e depois os cartões da turma.</span>
+        </div>
+
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnCriarProva">Criar prova e gerar cartões</button>
+        </div>
+        <div id="avisoProvas"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Provas da turma</h2>
+        <p class="bloco-ajuda">Baixe de novo os cartões a qualquer momento.</p>
+        <ul class="lista" id="listaProvas"></ul>
+      </div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Prévia do cartão</h2>
+        <p class="bloco-ajuda" id="ajudaPrevia">Cada aluno recebe a folha com o nome dele já impresso.</p>
+        <div class="previa-moldura" id="molduraPrevia">
+          <p class="previa-vazia">A prévia aparece depois de criar a prova.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CORRIGIR ==================== -->
+<section class="painel" id="painel-corrigir" hidden>
+  <div class="duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Corrigir com a câmera</h2>
+        <p class="bloco-ajuda">Aponte para a folha e capture. O gabarito e o aluno saem do QR Code.</p>
+
+        <div class="camera-caixa oculto" id="caixaCamera">
+          <video id="video" playsinline muted></video>
+          <div class="guia">
+            <span class="guia-canto tl"></span><span class="guia-canto tr"></span>
+            <span class="guia-canto bl"></span><span class="guia-canto br"></span>
+          </div>
+          <div class="selo" id="seloCamera">Enquadre a folha inteira</div>
+        </div>
+
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnAbrirCamera">Abrir câmera</button>
+          <button class="btn btn-principal oculto" id="btnCapturar">Capturar e corrigir</button>
+          <button class="btn btn-neutro oculto" id="btnFecharCamera">Fechar câmera</button>
+        </div>
+        <div id="avisoCamera"></div>
+      </div>
+
+      <div class="bloco">
+        <h2 class="bloco-titulo">Corrigir a turma inteira de uma vez</h2>
+        <p class="bloco-ajuda">
+          Um arquivo só: o PDF que saiu do scanner, ou um ZIP com as fotos.
+          Cada folha vira a nota de um aluno.
+        </p>
+        <div class="campo largo">
+          <input id="arquivoLote" type="file" accept=".pdf,.zip,image/*">
+          <span class="dica" id="dicaLote">PDF digitalizado ou ZIP de imagens.</span>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnCorrigirLote" disabled>Corrigir arquivo</button>
+        </div>
+        <div id="avisoLote"></div>
+      </div>
+
+      <div class="bloco">
+        <h2 class="bloco-titulo">Ou envie fotos já tiradas</h2>
+        <p class="bloco-ajuda">Pode mandar a turma inteira de uma vez.</p>
+        <div class="solta" id="areaSolta">
+          <p class="solta-titulo">Arraste as fotos aqui</p>
+          <p class="solta-ajuda">ou escolha os arquivos do computador</p>
+          <button class="btn btn-neutro" id="btnEscolher">Escolher fotos</button>
+          <input id="entradaFotos" type="file" accept="image/*" multiple class="oculto">
+        </div>
+        <ul class="lista" id="listaArquivos"></ul>
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnCorrigir" disabled>Corrigir</button>
+          <button class="btn btn-neutro oculto" id="btnLimparFotos">Limpar lista</button>
+        </div>
+        <div id="avisoCorrigir"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="bloco" id="blocoResultado" hidden><div id="areaResultado"></div></div>
+      <div class="bloco" id="blocoVazio">
+        <h2 class="bloco-titulo">Resultados</h2>
+        <p class="bloco-ajuda" style="margin:0 0 8px">
+          A nota aparece aqui e vai direto para o boletim, no nome do aluno.
+        </p>
+        <ol class="passos">
+          <li>Deixe a folha inteira no quadro, com os quatro quadrados pretos visíveis.</li>
+          <li>Use luz de cima e evite a sua sombra sobre o papel.</li>
+          <li>Não precisa estar reta — o sistema endireita a imagem sozinho.</li>
+        </ol>
+      </div>
+      <div class="bloco oculto" id="blocoCorrigidosAgora">
+        <h2 class="bloco-titulo">Corrigidos nesta sessão</h2>
+        <p class="bloco-ajuda" id="avisoSessao"></p>
+        <ul class="lista" id="listaSessao"></ul>
+
+        <div class="campos" style="margin-top:14px">
+          <div class="campo">
+            <label for="relTitulo">Título do relatório</label>
+            <input id="relTitulo" value="Relatório da turma" maxlength="60">
+          </div>
+          <div class="campo">
+            <label for="relTurma">Turma</label>
+            <input id="relTurma" placeholder="4º ano B" maxlength="40">
+          </div>
+          <div class="campo">
+            <label for="relProfessor">Professor</label>
+            <input id="relProfessor" placeholder="Seu nome" maxlength="60">
+          </div>
+          <div class="campo">
+            <label for="relDisciplina">Disciplina</label>
+            <input id="relDisciplina" placeholder="Matemática" maxlength="40">
+          </div>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnRelatorioPdf">Baixar relatório (PDF)</button>
+          <button class="btn btn-neutro" id="btnRelatorioCsv">Baixar planilha (CSV)</button>
+          <button class="btn btn-neutro" id="btnLimparSessao">Limpar lista</button>
+        </div>
+        <div id="avisoRelatorio"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BOLETIM ==================== -->
+<section class="painel" id="painel-boletim" hidden>
+  <div class="bloco">
+    <div class="campos">
+      <div class="campo largo">
+        <label for="selProvaBoletim">Prova</label>
+        <select id="selProvaBoletim"></select>
+      </div>
+    </div>
+    <div id="areaBoletim" style="margin-top:12px">
+      <p class="bloco-ajuda" style="margin:0">Escolha uma prova para ver as notas da turma.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ALUNOS ==================== -->
+<section class="painel" id="painel-alunos" hidden>
+  <div class="duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Alunos da turma</h2>
+        <p class="bloco-ajuda">Toque num nome para ver as notas do ano.</p>
+        <ul class="lista" id="listaAlunosHistorico" style="max-height:420px"></ul>
+      </div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Média por prova</h2>
+        <p class="bloco-ajuda">Como a turma foi em cada avaliação.</p>
+        <div id="mediasTurma"></div>
+      </div>
+    </div>
+    <div>
+      <div class="bloco" id="blocoHistorico">
+        <p class="bloco-ajuda" style="margin:0">Escolha um aluno na lista ao lado.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ACESSOS ==================== -->
+<section class="painel" id="painel-acessos" hidden>
+  <div class="bloco">
+    <h2 class="bloco-titulo">Quem pode usar o sistema</h2>
+    <p class="bloco-ajuda" style="margin:0">
+      Nesta tela você <b>cria as contas</b> — de escola ou de convidado — e emite
+      os <b>tickets</b>. Cada pessoa precisa de email, senha e ticket para entrar,
+      e o ticket se prende à primeira conta que o usar. No fim da página ficam o
+      backup e a limpeza dos dados.
+    </p>
+  </div>
+  <div class="bloco" style="margin-bottom:18px">
+    <h2 class="bloco-titulo">Backup</h2>
+    <p class="bloco-ajuda">
+      Baixa escolas, turmas, alunos, provas e notas num arquivo JSON.
+      Contas e tickets ficam de fora: arquivo de backup circula por e-mail e
+      pen drive, e credencial não deve viajar assim.
+    </p>
+    <div class="acoes" style="margin-top:0">
+      <button class="btn btn-neutro" id="btnBackup">Baixar backup</button>
+    </div>
+    <div id="avisoBackup"></div>
+  </div>
+
+  <div class="bloco bloco-perigo" style="margin-bottom:18px">
+    <h2 class="bloco-titulo">Limpar os dados</h2>
+    <p class="bloco-ajuda">
+      Apaga <strong>escolas, turmas, alunos, provas e todas as notas</strong>.
+      Serve para começar do zero antes de uma demonstração.
+      As contas de acesso e os tickets não são apagados — você continua logado.
+    </p>
+    <div class="colar" style="max-width:420px">
+      <input id="confirmarLimpeza" placeholder="digite: APAGAR TUDO"
+             autocomplete="off" spellcheck="false">
+      <button class="btn btn-apagar" id="btnLimparDados">Apagar dados</button>
+    </div>
+    <p class="dica" style="margin-top:8px">
+      A digitação é proposital: um botão que apaga o ano letivo inteiro
+      não pode disparar num clique errado.
+    </p>
+    <div id="avisoLimpeza"></div>
+  </div>
+
+  <div class="duas-colunas">
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Criar conta de acesso</h2>
+        <p class="bloco-ajuda">
+          Só a secretaria cria contas. A conta nasce <b>sem ticket</b>: emita um
+          logo abaixo e entregue à pessoa. Sem os dois, ela não entra — de
+          propósito, para que uma senha vazada não baste.
+        </p>
+
+        <div class="campos">
+          <div class="campo largo">
+            <label for="usuarioPapel">Tipo de acesso</label>
+            <select id="usuarioPapel"></select>
+            <span class="dica" id="descricaoPapel"></span>
+          </div>
+          <div class="campo largo oculto" id="campoEscolaUsuario">
+            <label for="usuarioEscola">Escola vinculada</label>
+            <select id="usuarioEscola"></select>
+            <span class="dica">
+              A conta enxerga só esta escola. Obrigatório para acesso de escola.
+            </span>
+          </div>
+          <div class="campo largo">
+            <label for="usuarioNome">Nome da pessoa</label>
+            <input id="usuarioNome" placeholder="Maria da Silva" maxlength="80">
+          </div>
+          <div class="campo">
+            <label for="usuarioEmail">Email</label>
+            <input id="usuarioEmail" type="email" placeholder="maria@escola.br">
+          </div>
+          <div class="campo">
+            <label for="usuarioSenha">Senha provisória</label>
+            <input id="usuarioSenha" type="text" placeholder="mínimo 8 caracteres">
+            <span class="dica">Entregue junto com o ticket.</span>
+          </div>
+        </div>
+
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnCriarUsuario">Criar conta</button>
+          <button class="btn btn-neutro" id="btnSenhaSugerida">Sugerir senha</button>
+        </div>
+        <div id="avisoUsuario"></div>
+      </div>
+
+      <div class="bloco">
+        <h2 class="bloco-titulo">Contas cadastradas</h2>
+        <p class="bloco-ajuda">Quem tem acesso ao sistema hoje.</p>
+        <div id="listaUsuarios"></div>
+      </div>
+
+      <div class="bloco">
+        <h2 class="bloco-titulo">Emitir ticket de acesso</h2>
+        <p class="bloco-ajuda">
+          Sem um ticket válido ninguém entra, mesmo sabendo email e senha.
+          Para cortar o acesso de alguém, revogue o ticket dessa pessoa.
+        </p>
+        <div class="campos">
+          <div class="campo largo">
+            <label for="ticketDescricao">Para quem é</label>
+            <input id="ticketDescricao" placeholder="Profa. Maria — 8º ano" maxlength="120">
+          </div>
+          <div class="campo">
+            <label for="ticketDias">Vale por (dias)</label>
+            <input id="ticketDias" type="number" min="0" value="90">
+            <span class="dica">0 = não vence</span>
+          </div>
+          </div>
+        <div class="acoes">
+          <button class="btn btn-principal" id="btnEmitirTicket">Emitir ticket</button>
+        </div>
+        <div id="ticketEmitido"></div>
+        <div id="avisoAcessos"></div>
+      </div>
+    </div>
+    <div>
+      <div class="bloco">
+        <h2 class="bloco-titulo">Tickets emitidos</h2>
+        <p class="bloco-ajuda">O código completo só aparece na hora em que é emitido.</p>
+        <div id="listaTickets"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== AJUDA ==================== -->
+<section class="painel" id="painel-ajuda" hidden>
+  <div class="bloco">
+    <h2 class="bloco-titulo">Como usar o sistema</h2>
+    <p class="bloco-ajuda">
+      Cada tela explicada por inteiro: o caminho a seguir, o que cada campo
+      significa, o que costuma dar errado e as dúvidas que mais aparecem.
+      Você também pode ligar o <b>Modo explicação</b> no topo da página: ele
+      mostra a explicação de cada tela dentro da própria tela, enquanto você
+      trabalha.
+    </p>
+    <div class="acoes" style="margin-top:6px">
+      <button class="btn btn-neutro" id="btnImprimirAjuda">Imprimir este manual</button>
+    </div>
+  </div>
+  <div id="areaAjuda"></div>
+</section>
+
+<!-- ==================== COMPARATIVO ==================== -->
+<section class="painel" id="painel-comparativo" hidden>
+  <div class="bloco">
+    <h2 class="bloco-titulo">Comparar escolas</h2>
+    <p class="bloco-ajuda">
+      Escolha duas ou mais escolas e um recorte. Comparar “a escola toda”
+      mistura 1º e 9º ano e não diz nada — filtrar por ano e disciplina é o
+      que torna o número interpretável.
+    </p>
+    <div class="campos">
+      <div class="campo largo">
+        <label for="escolasComparar">Escolas</label>
+        <div id="escolasComparar" class="caixa-escolas"></div>
+      </div>
+      <div class="campo">
+        <label for="compAno">Ano escolar</label>
+        <select id="compAno"></select>
+      </div>
+      <div class="campo">
+        <label for="compDisciplina">Disciplina</label>
+        <input id="compDisciplina" placeholder="Todas" list="conteudosSugeridos">
+      </div>
+    </div>
+    <div class="acoes">
+      <button class="btn btn-principal" id="btnComparar">Comparar</button>
+    </div>
+    <div id="avisoComparar"></div>
+  </div>
+  <div id="areaComparativo"></div>
+</section>
+
+<!-- ==================== ANÁLISE ==================== -->
+<section class="painel" id="painel-analise" hidden>
+  <div class="bloco">
+    <h2 class="bloco-titulo">Diagnóstico da escola</h2>
+    <p class="bloco-ajuda">O que a escola precisa retomar, a partir das provas já corrigidas.</p>
+    <div class="filtros">
+      <div class="campo">
+        <label for="filtroEscola">Escola</label>
+        <select id="filtroEscola"></select>
+      </div>
+      <div class="campo">
+        <label for="filtroAno">Ano escolar</label>
+        <select id="filtroAno"></select>
+      </div>
+      <div class="campo">
+        <label for="filtroDisciplina">Disciplina</label>
+        <select id="filtroDisciplina"></select>
+      </div>
+      <div class="campo">
+        <label for="filtroPeriodo">Período</label>
+        <select id="filtroPeriodo">
+          <option value="">Todo o histórico</option>
+          <option value="30">Últimos 30 dias</option>
+          <option value="90">Último bimestre</option>
+          <option value="180">Último semestre</option>
+        </select>
+      </div>
+      <button class="btn btn-neutro" id="btnCsvAnalise">Baixar planilha</button>
+    </div>
+  </div>
+
+  <div id="areaAnalise"></div>
+</section>
+
+</main>
+</div>
+
+<footer class="rodape-site">
+  <div class="rodape-interno">
+    <img src="/static/brasao.png" alt="">
+    <div>
+      <b>Avalia FRG</b> — Plataforma Municipal de Simulados e<br>
+      Acompanhamento da Aprendizagem
+    </div>
+    <div class="direita">
+      Secretaria Municipal de Educação<br>
+      Prefeitura de Fazenda Rio Grande
+    </div>
+  </div>
+</footer>
+
+<script src="/static/ajuda.js"></script>
+<script>
+const LETRAS = ["A","B","C","D","E"];
+let maximoQuestoes = 140;
+let gabarito = {};
+let conteudosQuestao = {};   // {numero: 'Frações'}
+let arquivos = [];
+let escolaAtual = null, turmaAtual = null, provaAtual = null;
+let corrigidosNaSessao = [];
+let papelAtual = "";          // admin | membro | convidado
+let fluxoCamera = null, detectorQR = null, timerQR = null;
+
+/* ---------------- utilidades ---------------- */
+function el(id){ return document.getElementById(id); }
+
+function mostrarAviso(id, tipo, html){
+  const alvo = el(id);
+  if(!alvo) return;
+  alvo.innerHTML = html ? `<div class="aviso aviso-${tipo}">${html}</div>` : "";
+}
+
+async function lerErro(resposta){
+  try{
+    const corpo = await resposta.json();
+    return corpo.erro || corpo.detail || "Não foi possível concluir.";
+  }catch(e){
+    /* Resposta não-JSON quer dizer que quem respondeu não foi o servidor
+       Python — normalmente a página foi aberta por outro servidor (o
+       Live Server do VS Code, na porta 5500) ou com duplo clique no
+       arquivo. A mensagem antiga só dizia "código 404", o que não
+       ajudava ninguém a descobrir isso. */
+    if(resposta.status === 404){
+      return `Esta página não está sendo servida pelo servidor do sistema.
+              Abra <strong>http://localhost:8080</strong> — o endereço que aparece
+              no terminal depois de rodar <code>python main.py</code>.
+              Não use o Live Server nem abra o arquivo com duplo clique.`;
+    }
+    return `O servidor respondeu com erro ${resposta.status}. Veja a mensagem no
+            terminal onde o <code>python main.py</code> está rodando.`;
+  }
+}
+
+async function pedir(url, opcoes){
+  const resposta = await fetch(url, opcoes);
+  if(!resposta.ok) throw new Error(await lerErro(resposta));
+  return resposta;
+}
+
+function formulario(objeto){
+  const dados = new FormData();
+  Object.entries(objeto).forEach(([chave, valor]) => {
+    if(valor !== null && valor !== undefined) dados.append(chave, valor);
+  });
+  return dados;
+}
+
+/* ---------------- navegação ---------------- */
+const PAINEIS = ["turmas","provas","corrigir","boletim","alunos","analise","comparativo","acessos","ajuda"];
+
+/* Cada painel tem o que precisa ser carregado ao entrar. Manter isso
+   num mapa evita a cadeia de "if" que existia antes — foi ali que a
+   aba Análise ficou de fora da lista de painéis e nunca aparecia. */
+const AO_ABRIR = {
+  boletim:  carregarProvasBoletim,
+  alunos:   carregarPainelAlunos,
+  analise:  prepararAnalise,
+  comparativo: prepararComparativo,
+  ajuda: montarManual,
+  acessos:  carregarPainelAcessos,
+};
+
+/* Título e subtítulo de cada tela. Ficam aqui, e não espalhados pelo
+   HTML, para o cabeçalho de página nunca discordar do menu. */
+const TITULOS = {
+  turmas:      ["Turmas e alunos", "Cadastro da escola, das turmas e dos alunos"],
+  provas:      ["Criar prova", "Gabarito, conteúdos e cartões para imprimir"],
+  corrigir:    ["Corrigir provas", "Pela câmera, por fotos ou por arquivo da turma"],
+  boletim:     ["Boletim da turma", "Notas de uma prova e acerto por questão"],
+  alunos:      ["Histórico do aluno", "Desempenho ao longo do ano letivo"],
+  analise:     ["Análise pedagógica", "O que a rede precisa retomar"],
+  comparativo: ["Comparar escolas", "Desempenho lado a lado, com margem de erro"],
+  acessos:     ["Usuários e acessos", "Contas, tickets e manutenção dos dados"],
+  ajuda:       ["Como usar o sistema", "Manual completo, tela por tela"],
+};
+
+function abrirPainel(nome){
+  if(!PAINEIS.includes(nome)) return;
+
+  const rotulo = TITULOS[nome];
+  if(rotulo){
+    el("tituloPagina").textContent = rotulo[0];
+    el("subtituloPagina").textContent = rotulo[1];
+  }
+
+  PAINEIS.forEach(painel => {
+    const secao = el("painel-" + painel);
+    if(secao) secao.hidden = painel !== nome;
+  });
+
+  document.querySelectorAll(".item-menu").forEach(item =>
+    item.setAttribute("aria-current", item.dataset.painel === nome));
+
+  // A câmera fica ligada enquanto o painel está aberto; sair dele sem
+  // desligar deixaria a luz do celular acesa e a bateria drenando.
+  if(nome !== "corrigir") pararCamera();
+
+  const carregar = AO_ABRIR[nome];
+  if(carregar) carregar();
+
+  atualizarCabecalho(nome);
+
+  // A caixa de explicação é recriada a cada troca: o conteúdo é o da
+  // tela aberta, não um texto genérico.
+  if(modoExplicacao) aplicarExplicacao();
+
+  fecharMenuNoCelular();
+}
+
+document.querySelectorAll(".item-menu").forEach(item => {
+  item.addEventListener("click", () => abrirPainel(item.dataset.painel));
+});
+
+/* ---------------- menu em cascata ---------------- */
+document.querySelectorAll(".titulo-grupo").forEach(titulo => {
+  titulo.addEventListener("click", () => {
+    const grupo = titulo.closest(".grupo-menu");
+    const fechado = grupo.classList.toggle("fechado");
+    titulo.setAttribute("aria-expanded", !fechado);
+  });
+});
+
+function fecharMenuNoCelular(){
+  if(window.innerWidth <= 920){
+    el("menuLateral").classList.remove("aberto");
+    el("cortinaMenu").classList.add("oculto");
+    el("btnMenu").setAttribute("aria-expanded", "false");
+  }
+}
+
+el("btnMenu").addEventListener("click", () => {
+  const aberto = el("menuLateral").classList.toggle("aberto");
+  el("cortinaMenu").classList.toggle("oculto", !aberto);
+  el("btnMenu").setAttribute("aria-expanded", aberto);
+});
+
+el("cortinaMenu").addEventListener("click", fecharMenuNoCelular);
+
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") fecharMenuNoCelular();
+});
+
+/* ---------------- cadastro ---------------- */
+async function carregarEscolas(){
+  const escolas = await (await pedir("/api/escolas")).json();
+  const selecao = el("selEscola");
+  selecao.innerHTML = escolas.length
+    ? escolas.map(e => `<option value="${e.id}">${e.nome}</option>`).join("")
+    : `<option value="">Cadastre uma escola ao lado</option>`;
+  if(escolas.length){
+    if(!escolas.some(e => e.id === escolaAtual)) escolaAtual = escolas[0].id;
+    selecao.value = escolaAtual;
+    await carregarTurmas();
+  }
+}
+
+async function carregarTurmas(){
+  if(!escolaAtual){ el("selTurma").innerHTML = ""; return; }
+  const turmas = await (await pedir(`/api/turmas?escola_id=${escolaAtual}`)).json();
+  const selecao = el("selTurma");
+  selecao.innerHTML = turmas.length
+    ? turmas.map(t => `<option value="${t.id}">${t.nome}${
+        t.ano_escolar_nome && t.ano_escolar_nome !== "Sem ano definido"
+          ? " · " + t.ano_escolar_nome : ""} — ${t.total_alunos} aluno(s)</option>`).join("")
+    : `<option value="">Cadastre uma turma ao lado</option>`;
+  if(turmas.length){
+    if(!turmas.some(t => t.id === turmaAtual)) turmaAtual = turmas[0].id;
+    selecao.value = turmaAtual;
+    await carregarAlunos();
+    await carregarProvas();
+  }else{
+    turmaAtual = null;
+    el("listaAlunos").innerHTML = "";
+  }
+  atualizarAjudaTurma(turmas);
+}
+
+function atualizarAjudaTurma(turmas){
+  const turma = (turmas || []).find(t => t.id === turmaAtual);
+  if(!turma){
+    el("ajudaTurmaProva").textContent = "Cadastre uma turma antes de criar a prova.";
+    return;
+  }
+  let texto = `Será criada para ${turma.nome}, com ${turma.total_alunos} aluno(s).`;
+  if(!turma.ano_escolar){
+    // Sem ano escolar a turma fica fora do comparativo entre anos —
+    // vale avisar antes, não depois de a prova estar corrigida.
+    texto += " Esta turma está sem ano escolar: ela não entrará no comparativo da análise.";
+  }
+  el("ajudaTurmaProva").textContent = texto;
+}
+
+async function carregarAlunos(){
+  if(!turmaAtual) return;
+  const alunos = await (await pedir(`/api/turmas/${turmaAtual}/alunos`)).json();
+  const lista = el("listaAlunos");
+  lista.innerHTML = "";
+  alunos.forEach(aluno => {
+    const item = document.createElement("li");
+    item.innerHTML = `<span class="nome">${aluno.nome}</span>`;
+    const remover = document.createElement("button");
+    remover.className = "btn btn-perigo";
+    remover.textContent = "remover";
+    remover.addEventListener("click", async () => {
+      await pedir(`/api/alunos/${aluno.id}`, { method:"DELETE" });
+      await carregarAlunos(); await carregarTurmas();
+    });
+    item.appendChild(remover);
+    lista.appendChild(item);
+  });
+}
+
+el("selEscola").addEventListener("change", async e => {
+  escolaAtual = parseInt(e.target.value) || null;
+  await carregarTurmas();
+});
+el("selTurma").addEventListener("change", async e => {
+  turmaAtual = parseInt(e.target.value) || null;
+  await carregarAlunos(); await carregarProvas();
+});
+
+el("btnCriarEscola").addEventListener("click", async () => {
+  const nome = el("novaEscola").value.trim();
+  if(!nome){ mostrarAviso("avisoTurmas","atencao","<span>Escreva o nome da escola.</span>"); return; }
+  try{
+    const escola = await (await pedir("/api/escolas", { method:"POST", body: formulario({nome}) })).json();
+    escolaAtual = escola.id;
+    el("novaEscola").value = "";
+    await carregarEscolas();
+    mostrarAviso("avisoTurmas","ok",`<span><strong>${escola.nome}</strong> cadastrada.</span>`);
+  }catch(erro){ mostrarAviso("avisoTurmas","erro",`<span>${erro.message}</span>`); }
+});
+
+async function carregarAnosEscolares(){
+  if(anosEscolares.length) return;
+  anosEscolares = await (await pedir("/api/anos-escolares")).json();
+  el("novoAnoEscolar").innerHTML =
+    `<option value="">Selecione…</option>` +
+    anosEscolares.map(a => `<option value="${a.codigo}">${a.nome}</option>`).join("");
+}
+
+el("btnCriarTurma").addEventListener("click", async () => {
+  const nome = el("novaTurma").value.trim();
+  const anoEscolar = el("novoAnoEscolar").value;
+  if(!escolaAtual){ mostrarAviso("avisoTurmas","atencao","<span>Cadastre uma escola primeiro.</span>"); return; }
+  if(!nome){ mostrarAviso("avisoTurmas","atencao","<span>Escreva o nome da turma.</span>"); return; }
+  try{
+    const turma = await (await pedir("/api/turmas", {
+      method:"POST", body: formulario({escola_id: escolaAtual, nome, ano_escolar: anoEscolar})
+    })).json();
+    turmaAtual = turma.id;
+    el("novaTurma").value = "";
+    await carregarTurmas();
+    mostrarAviso("avisoTurmas","ok",`<span>Turma <strong>${turma.nome}</strong> criada.</span>`);
+  }catch(erro){ mostrarAviso("avisoTurmas","erro",`<span>${erro.message}</span>`); }
+});
+
+el("btnAddAlunos").addEventListener("click", async () => {
+  if(!turmaAtual){ mostrarAviso("avisoAlunos","atencao","<span>Selecione uma turma.</span>"); return; }
+  const nomes = el("listaNomes").value;
+  if(!nomes.trim()){ mostrarAviso("avisoAlunos","atencao","<span>Cole a lista de nomes.</span>"); return; }
+  try{
+    const criados = await (await pedir(`/api/turmas/${turmaAtual}/alunos`, {
+      method:"POST", body: formulario({nomes})
+    })).json();
+    el("listaNomes").value = "";
+    await carregarAlunos(); await carregarTurmas();
+    mostrarAviso("avisoAlunos","ok", criados.length
+      ? `<span><strong>${criados.length} aluno(s)</strong> adicionados.</span>`
+      : "<span>Nenhum nome novo: todos já estavam na turma.</span>");
+  }catch(erro){ mostrarAviso("avisoAlunos","erro",`<span>${erro.message}</span>`); }
+});
+
+/* ---------------- gabarito ---------------- */
+function montarGrade(){
+  const total = Math.min(maximoQuestoes, Math.max(1, parseInt(el("qtdQuestoes").value) || 1));
+  const grade = el("gradeGabarito");
+  grade.innerHTML = "";
+
+  for(let n = 1; n <= total; n++){
+    const linha = document.createElement("div");
+    linha.className = "linha-q";
+    linha.innerHTML = `<span class="linha-q-num">${String(n).padStart(2,"0")}</span>`;
+    const opcoes = document.createElement("div");
+    opcoes.className = "opcoes";
+
+    LETRAS.forEach(letra => {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "opcao";
+      botao.textContent = letra;
+      botao.setAttribute("aria-pressed", gabarito[n] === letra);
+      botao.setAttribute("aria-label", `Questão ${n}, alternativa ${letra}`);
+      botao.addEventListener("click", () => {
+        gabarito[n] = (gabarito[n] === letra) ? undefined : letra;
+        if(!gabarito[n]) delete gabarito[n];
+        opcoes.querySelectorAll(".opcao").forEach(b =>
+          b.setAttribute("aria-pressed", gabarito[n] === b.textContent));
+      });
+      opcoes.appendChild(botao);
+    });
+
+    linha.appendChild(opcoes);
+
+    // O conteúdo fica ao lado da resposta, e não numa tela separada:
+    // classificado na hora de montar o gabarito, ele é preenchido;
+    // deixado para depois, quase nunca é.
+    const campoConteudo = document.createElement("input");
+    campoConteudo.className = "conteudo-questao";
+    campoConteudo.placeholder = "conteúdo";
+    campoConteudo.setAttribute("list", "conteudosSugeridos");
+    campoConteudo.setAttribute("aria-label", `Conteúdo da questão ${n}`);
+    campoConteudo.value = conteudosQuestao[n] || "";
+    campoConteudo.addEventListener("input", () => {
+      const valor = campoConteudo.value.trim();
+      if(valor) conteudosQuestao[n] = valor; else delete conteudosQuestao[n];
+    });
+    linha.appendChild(campoConteudo);
+
+    grade.appendChild(linha);
+  }
+  Object.keys(gabarito).forEach(n => { if(n > total) delete gabarito[n]; });
+}
+
+el("qtdQuestoes").addEventListener("input", montarGrade);
+
+/* ---------------- modelo do cartão ---------------- */
+document.querySelectorAll('input[name="modeloCartao"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    const proprio = radio.value === "proprio" && radio.checked;
+    el("campoCartaoProprio").classList.toggle("oculto", !proprio);
+    el("opcaoPadrao").classList.toggle("ativa", !proprio);
+    el("opcaoProprio").classList.toggle("ativa", proprio);
+  });
+});
+
+function usaCartaoProprio(){
+  const escolhido = document.querySelector('input[name="modeloCartao"]:checked');
+  return escolhido && escolhido.value === "proprio";
+}
+
+el("mostrarConteudos").addEventListener("change", e => {
+  el("gradeGabarito").classList.toggle("sem-conteudo", !e.target.checked);
+});
+
+async function carregarSugestoesDeConteudo(){
+  /* Sugerir o que já existe evita "Frações", "fracao" e "FRAÇÕES"
+     convivendo na mesma escola — cada variação viraria um conteúdo
+     diferente na análise e fragmentaria a amostra. */
+  try{
+    const lista = await (await pedir(
+      `/api/conteudos${escolaAtual ? "?escola_id=" + escolaAtual : ""}`)).json();
+    el("conteudosSugeridos").innerHTML =
+      lista.map(c => `<option value="${c}">`).join("");
+  }catch(e){}
+}
+
+el("btnColar").addEventListener("click", () => {
+  const letras = el("colarGabarito").value.toUpperCase().split(/[^A-E]+/).join("").split("");
+  if(!letras.length){
+    mostrarAviso("avisoProvas","atencao",
+      "<span>Cole as respostas em sequência, como <strong>ABCDEABCDE</strong>.</span>");
+    return;
+  }
+  if(letras.length > maximoQuestoes){
+    mostrarAviso("avisoProvas","atencao",
+      `<span>Você colou ${letras.length} respostas, e cabem ${maximoQuestoes} numa folha.</span>`);
+    return;
+  }
+  gabarito = {};
+  letras.forEach((letra, i) => { gabarito[i+1] = letra; });
+  el("qtdQuestoes").value = letras.length;
+  montarGrade();
+  mostrarAviso("avisoProvas","ok",
+    `<span><strong>${letras.length} respostas aplicadas.</strong> Confira na grade.</span>`);
+});
+
+el("btnLimparGabarito").addEventListener("click", () => {
+  gabarito = {}; conteudosQuestao = {};
+  montarGrade(); mostrarAviso("avisoProvas","","");
+});
+
+function gabaritoEmTexto(){
+  const total = parseInt(el("qtdQuestoes").value) || 0;
+  const faltando = [], partes = [];
+  for(let n = 1; n <= total; n++){
+    if(!gabarito[n]) faltando.push(n); else partes.push(`${n}${gabarito[n]}`);
+  }
+  return { texto: partes.join(","), faltando };
+}
+
+/* ---------------- provas ---------------- */
+async function carregarProvas(){
+  if(!turmaAtual){ el("listaProvas").innerHTML = ""; return; }
+  const provas = await (await pedir(`/api/provas?turma_id=${turmaAtual}`)).json();
+  const lista = el("listaProvas");
+  lista.innerHTML = "";
+
+  if(!provas.length){
+    lista.innerHTML = `<li><span class="nome marca-pequena">Nenhuma prova criada ainda.</span></li>`;
+    return;
+  }
+
+  provas.forEach(prova => {
+    const item = document.createElement("li");
+    item.innerHTML = `<span class="nome">${prova.titulo}
+      <span class="marca-pequena">· ${prova.total_questoes} questões</span></span>`;
+    const baixar = document.createElement("button");
+    baixar.className = "btn-texto";
+    baixar.textContent = "baixar cartões";
+    baixar.addEventListener("click", () => baixarCartoes(prova));
+    item.appendChild(baixar);
+    lista.appendChild(item);
+  });
+}
+
+async function baixarCartoes(prova, anexo){
+  try{
+    const corpo = anexo
+      ? formulario({ incluir_prova: "true", file: anexo })
+      : formulario({ incluir_prova: "false" });
+    const resposta = await pedir(`/api/provas/${prova.id}/cartoes`, { method:"POST", body: corpo });
+    const url = URL.createObjectURL(await resposta.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cartoes-prova-${prova.id}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    mostrarAviso("avisoProvas","ok",
+      "<span><strong>Cartões baixados.</strong> Imprima em tamanho real (100%), sem “ajustar à página”.</span>");
+  }catch(erro){
+    mostrarAviso("avisoProvas","erro",`<span>${erro.message}</span>`);
+  }
+}
+
+el("btnCriarProva").addEventListener("click", async (evento) => {
+  /* O convidado não tem turma nem prova salva: para ele o botão gera
+     um cartão AVULSO, com o gabarito no próprio QR. Sem este desvio,
+     ele montava o gabarito na tela e não conseguia imprimir nada. */
+  if(papelAtual === "convidado") return gerarCartaoAvulso(evento);
+
+  if(!turmaAtual){
+    mostrarAviso("avisoProvas","atencao","<span>Selecione uma turma na aba Turmas.</span>"); return;
+  }
+  const { texto, faltando } = gabaritoEmTexto();
+  if(faltando.length){
+    const lista = faltando.slice(0,8).join(", ") + (faltando.length > 8 ? "…" : "");
+    mostrarAviso("avisoProvas","atencao",
+      `<span><strong>Falta marcar a resposta</strong> das questões ${lista}.</span>`);
+    return;
+  }
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Gerando…';
+
+  try{
+    // "1=Frações;4=Geometria": só as questões classificadas viajam,
+    // em vez de uma lista com buracos.
+    const conteudos = Object.entries(conteudosQuestao)
+      .filter(([, valor]) => valor)
+      .map(([numero, valor]) => `${numero}=${valor}`)
+      .join(";");
+
+    const prova = await (await pedir("/api/provas", { method:"POST", body: formulario({
+      turma_id: turmaAtual,
+      titulo: el("tituloProva").value.trim() || "Avaliação",
+      disciplina: el("disciplinaProva").value.trim(),
+      gabarito: texto,
+      conteudos,
+    })})).json();
+
+    provaAtual = prova.id;
+
+    // Com cartão próprio, o modelo precisa ser analisado ANTES de
+    // gerar os cartões: é dele que sai o layout de leitura.
+    if(usaCartaoProprio()){
+      const arquivo = el("arquivoCartao").files[0];
+      if(!arquivo){
+        mostrarAviso("avisoProvas","atencao",
+          "<span>Escolha o arquivo do seu cartão-resposta em branco.</span>");
+        return;
+      }
+
+      const envio = new FormData();
+      envio.append("file", arquivo);
+      const analise = await (await pedir(
+        `/api/provas/${prova.id}/cartao-proprio`, { method:"POST", body: envio })).json();
+
+      let mensagem = `<span><strong>Cartão reconhecido:</strong>
+        ${analise.total_questoes} questões com ${analise.total_alternativas}
+        alternativas, em ${analise.colunas} coluna(s).
+        Confira a grade marcada na prévia antes de imprimir.</span>`;
+      mostrarAviso("avisoProvas", analise.avisos.length ? "atencao" : "ok", mensagem);
+
+      if(analise.avisos.length){
+        el("avisoProvas").insertAdjacentHTML("beforeend",
+          `<div class="aviso aviso-atencao" style="flex-direction:column;gap:5px">` +
+          analise.avisos.map(a => `<span>${a}</span>`).join("") + `</div>`);
+      }
+    }
+
+    await carregarProvas();
+
+    // A prévia do cartão próprio mostra a GRADE DETECTADA sobre a
+    // folha. Detecção automática erra, e conferir custa dez segundos
+    // contra trinta cartões corrigidos errado.
+    const rotaPrevia = usaCartaoProprio()
+      ? { url: `/api/provas/${prova.id}/cartao-proprio/previa`, opcoes: {} }
+      : { url: `/api/provas/${prova.id}/previa`, opcoes: { method:"POST" } };
+
+    const previa = await pedir(rotaPrevia.url, rotaPrevia.opcoes);
+    el("molduraPrevia").innerHTML =
+      `<img src="${URL.createObjectURL(await previa.blob())}" alt="Prévia do cartão">`;
+    el("ajudaPrevia").textContent = usaCartaoProprio()
+      ? "Os retângulos vermelhos mostram onde o sistema vai ler cada bolha. Confira antes de imprimir."
+      : "Cada aluno recebe a folha com o nome dele já impresso.";
+
+    await baixarCartoes(prova, el("arquivoProva").files[0]);
+  }catch(erro){
+    mostrarAviso("avisoProvas","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+/* ---------------- câmera ---------------- */
+el("btnAbrirCamera").addEventListener("click", async () => {
+  mostrarAviso("avisoCamera","","");
+  try{
+    fluxoCamera = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
+    });
+    const video = el("video");
+    video.srcObject = fluxoCamera;
+    await video.play();
+
+    el("caixaCamera").classList.remove("oculto");
+    el("btnAbrirCamera").classList.add("oculto");
+    el("btnCapturar").classList.remove("oculto");
+    el("btnFecharCamera").classList.remove("oculto");
+    iniciarDeteccaoQR();
+  }catch(erro){
+    mostrarAviso("avisoCamera","erro",
+      `<span><strong>Não foi possível abrir a câmera.</strong> Autorize o acesso no navegador.
+       Em celular, o site precisa estar em HTTPS. Você ainda pode enviar as fotos pelo campo abaixo.</span>`);
+  }
+});
+
+el("btnFecharCamera").addEventListener("click", pararCamera);
+
+function pararCamera(){
+  if(timerQR){ clearInterval(timerQR); timerQR = null; }
+  if(fluxoCamera){
+    fluxoCamera.getTracks().forEach(t => t.stop());
+    fluxoCamera = null;
+  }
+  el("caixaCamera").classList.add("oculto");
+  el("btnAbrirCamera").classList.remove("oculto");
+  el("btnCapturar").classList.add("oculto");
+  el("btnFecharCamera").classList.add("oculto");
+}
+
+/* O BarcodeDetector só orienta o professor ("QR encontrado"). A leitura
+   que vale é feita no servidor, sobre a foto capturada — por isso a
+   correção funciona igual nos navegadores que não têm essa API. */
+function iniciarDeteccaoQR(){
+  const selo = el("seloCamera");
+  if(!("BarcodeDetector" in window)){
+    selo.textContent = "Enquadre a folha inteira";
+    return;
+  }
+  try{ detectorQR = new BarcodeDetector({ formats: ["qr_code"] }); }
+  catch(e){ return; }
+
+  timerQR = setInterval(async () => {
+    const video = el("video");
+    if(!video.videoWidth) return;
+    try{
+      const encontrados = await detectorQR.detect(video);
+      if(encontrados.length){
+        selo.textContent = "QR Code encontrado — pode capturar";
+        selo.classList.add("pronto");
+      }else{
+        selo.textContent = "Aproxime até o QR Code aparecer";
+        selo.classList.remove("pronto");
+      }
+    }catch(e){ /* frame ainda não pronto */ }
+  }, 600);
+}
+
+el("btnCapturar").addEventListener("click", async (evento) => {
+  const video = el("video");
+  if(!video.videoWidth){ return; }
+
+  const tela = document.createElement("canvas");
+  tela.width = video.videoWidth;
+  tela.height = video.videoHeight;
+  tela.getContext("2d").drawImage(video, 0, 0);
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Corrigindo…';
+  mostrarAviso("avisoCamera","","");
+
+  tela.toBlob(async (imagem) => {
+    try{
+      const dados = new FormData();
+      dados.append("file", imagem, "captura.jpg");
+      const resposta = await pedir("/api/corrigir", { method:"POST", body: dados });
+      const resultado = await resposta.json();
+      mostrarUmResultado(resultado);
+      registrarNaSessao(resultado);
+    }catch(erro){
+      mostrarAviso("avisoCamera","erro",`<span>${erro.message}</span>`);
+    }finally{
+      botao.disabled = false;
+      botao.textContent = original;
+    }
+  }, "image/jpeg", 0.92);
+});
+
+/* ---------------- envio de arquivos ---------------- */
+const areaSolta = el("areaSolta");
+el("btnEscolher").addEventListener("click", () => el("entradaFotos").click());
+el("entradaFotos").addEventListener("change", e => adicionarArquivos(e.target.files));
+
+["dragenter","dragover"].forEach(ev =>
+  areaSolta.addEventListener(ev, e => { e.preventDefault(); areaSolta.classList.add("ativa"); }));
+["dragleave","drop"].forEach(ev =>
+  areaSolta.addEventListener(ev, e => { e.preventDefault(); areaSolta.classList.remove("ativa"); }));
+areaSolta.addEventListener("drop", e => adicionarArquivos(e.dataTransfer.files));
+
+function adicionarArquivos(lista){
+  for(const arquivo of lista){
+    if(arquivo.type.startsWith("image/")) arquivos.push(arquivo);
+  }
+  desenharListaArquivos();
+}
+
+function desenharListaArquivos(){
+  const lista = el("listaArquivos");
+  lista.innerHTML = "";
+  arquivos.forEach((arquivo, indice) => {
+    const item = document.createElement("li");
+    item.innerHTML = `<span class="nome">${arquivo.name}</span>`;
+    const remover = document.createElement("button");
+    remover.className = "btn btn-perigo";
+    remover.textContent = "remover";
+    remover.addEventListener("click", () => { arquivos.splice(indice,1); desenharListaArquivos(); });
+    item.appendChild(remover);
+    lista.appendChild(item);
+  });
+  el("btnCorrigir").disabled = arquivos.length === 0;
+  el("btnCorrigir").textContent = arquivos.length > 1 ? `Corrigir ${arquivos.length} cartões` : "Corrigir";
+  el("btnLimparFotos").classList.toggle("oculto", arquivos.length === 0);
+}
+
+el("btnLimparFotos").addEventListener("click", () => {
+  arquivos = []; el("entradaFotos").value = ""; desenharListaArquivos();
+  mostrarAviso("avisoCorrigir","","");
+});
+
+el("btnCorrigir").addEventListener("click", async (evento) => {
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Corrigindo…';
+  mostrarAviso("avisoCorrigir","","");
+
+  const dados = new FormData();
+  arquivos.forEach(arquivo => dados.append("files", arquivo));
+
+  try{
+    const lote = await (await pedir("/api/corrigir-lote", { method:"POST", body: dados })).json();
+    desenharLote(lote);
+    lote.itens.filter(i => i.sucesso).forEach(i => registrarNaSessao(i.resultado));
+  }catch(erro){
+    mostrarAviso("avisoCorrigir","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+/* ---------------- resultados ---------------- */
+function abrirResultado(){
+  el("blocoVazio").hidden = true;
+  el("blocoResultado").hidden = false;
+  return el("areaResultado");
+}
+
+function mostrarUmResultado(r){
+  abrirResultado().innerHTML = cartaoDeNota(r);
+}
+
+function registrarNaSessao(r){
+  corrigidosNaSessao.unshift(r);
+  const lista = el("listaSessao");
+  el("blocoCorrigidosAgora").classList.remove("oculto");
+  // Para o convidado, a lista é o ÚNICO lugar onde o resultado existe.
+  // Dizer isso antes de ele fechar a aba evita perder o trabalho todo.
+  el("avisoSessao").textContent = (papelAtual === "convidado")
+    ? "Nada fica guardado no sistema. Baixe o relatório antes de fechar esta página."
+    : "As notas já estão no boletim. O relatório serve para imprimir ou arquivar.";
+  lista.innerHTML = corrigidosNaSessao.slice(0,25).map(item => `
+    <li>
+      <span class="nome">${item.aluno_nome || item.arquivo || "Cartão avulso"}</span>
+      <span class="marca-pequena">${item.salvo ? "salvo" : "não salvo"}</span>
+      <strong>${item.nota.toFixed(1)}</strong>
+    </li>`).join("");
+}
+
+function desenharLote(lote){
+  const sucessos = lote.itens.filter(i => i.sucesso);
+  const falhas = lote.itens.filter(i => !i.sucesso);
+  const area = abrirResultado();
+
+  if(sucessos.length === 1 && !falhas.length){
+    area.innerHTML = cartaoDeNota(sucessos[0].resultado);
+    return;
+  }
+
+  let html = `<h2 class="bloco-titulo">Turma corrigida</h2>
+    <p class="bloco-ajuda">${lote.total_corrigidos} de ${lote.total_enviados} cartões lidos${
+      lote.media_da_turma !== null ? ` · média ${lote.media_da_turma.toFixed(1)}` : ""}</p>`;
+
+  if(sucessos.length){
+    html += `<table><thead><tr><th>Aluno</th><th class="numero">Acertos</th>
+             <th class="numero">Nota</th><th></th></tr></thead><tbody>`;
+    sucessos.forEach((item, indice) => {
+      const r = item.resultado;
+      html += `<tr class="linha-clicavel" data-indice="${indice}">
+        <td>${r.aluno_nome || item.arquivo}</td>
+        <td class="numero">${r.acertos}/${r.total_questoes}</td>
+        <td class="numero"><strong>${r.nota.toFixed(1)}</strong></td>
+        <td class="marca-pequena">${r.salvo ? "salvo" : "avulso"}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  if(falhas.length){
+    html += `<div class="aviso aviso-erro" style="flex-direction:column;gap:6px">
+      <strong>${falhas.length} cartão(ões) não puderam ser lidos</strong>`;
+    falhas.forEach(f => { html += `<span>${f.arquivo} — ${f.erro}</span>`; });
+    html += `</div>`;
+  }
+
+  html += `<div id="detalheAluno"></div>`;
+  area.innerHTML = html;
+
+  area.querySelectorAll(".linha-clicavel").forEach(linha => {
+    linha.addEventListener("click", () => {
+      el("detalheAluno").innerHTML =
+        `<div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--linha)">
+           ${cartaoDeNota(sucessos[parseInt(linha.dataset.indice)].resultado)}
+         </div>`;
+    });
+  });
+}
+
+function cartaoDeNota(r){
+  const contadores = [
+    ["c-acerto", r.acertos, "certas"],
+    ["c-erro", r.erros, "erradas"],
+    ["c-branco", r.em_branco, "em branco"],
+    ["c-rasura", r.rasuras, "com rasura"],
+  ].filter(([,v]) => v > 0)
+   .map(([c,v,rot]) => `<span class="contador ${c}">${v} ${rot}</span>`).join("");
+
+  const questoes = r.detalhamento.map(d => `
+    <div class="q q-${d.status}" title="${rotuloStatus(d.status)}">
+      ${d.questao}<span>${d.marcada || "—"}</span>
+    </div>`).join("");
+
+  let alertas = "";
+  if(r.alinhamento !== "ancoras"){
+    alertas += `<div class="aviso aviso-atencao"><span><strong>Confira este resultado.</strong>
+      Os quadrados dos cantos não foram encontrados, então a leitura pode ter saído torta.</span></div>`;
+  }
+  if(!r.salvo && r.motivo_nao_salvo){
+    alertas += `<div class="aviso aviso-atencao"><span><strong>Nota não guardada.</strong>
+      ${r.motivo_nao_salvo}</span></div>`;
+  }
+
+  return `
+    <div class="nota-cartao">
+      <div class="nota-marca">
+        <svg viewBox="0 0 150 118" aria-hidden="true">
+          <path d="M75 8 C122 8 143 32 141 60 C139 90 112 111 73 110 C34 109 9 90 9 59 C9 30 32 9 75 8"
+                fill="none" stroke="#B3261E" stroke-width="3.2" stroke-linecap="round"
+                transform="rotate(-4 75 59)" opacity="0.9"/>
+        </svg>
+        <div class="nota-valor">${r.nota.toFixed(1)}</div>
+      </div>
+      <div class="nota-resumo">
+        <span class="nota-titulo">${r.aluno_nome || `${r.acertos} de ${r.total_questoes} corretas`}</span>
+        <span class="nota-linha">${r.acertos} de ${r.total_questoes} corretas · prova ${r.prova_id}</span>
+        <span class="nota-linha">${r.salvo ? "Nota guardada no boletim" : "Correção avulsa"}</span>
+      </div>
+    </div>
+    <div class="contadores">${contadores}</div>
+    <div class="questoes">${questoes}</div>
+    ${alertas}`;
+}
+
+function rotuloStatus(status){
+  return { correto:"Certa", incorreto:"Errada", em_branco:"Em branco", rasura:"Rasura" }[status] || status;
+}
+
+/* ---------------- boletim ---------------- */
+async function carregarProvasBoletim(){
+  if(!turmaAtual){
+    el("selProvaBoletim").innerHTML = `<option value="">Selecione uma turma na aba Turmas</option>`;
+    return;
+  }
+  const provas = await (await pedir(`/api/provas?turma_id=${turmaAtual}`)).json();
+  const selecao = el("selProvaBoletim");
+  selecao.innerHTML = provas.length
+    ? provas.map(p => `<option value="${p.id}">${p.titulo} — ${p.total_questoes} questões</option>`).join("")
+    : `<option value="">Nenhuma prova criada</option>`;
+  if(provas.length){
+    selecao.value = provaAtual && provas.some(p => p.id === provaAtual) ? provaAtual : provas[0].id;
+    await mostrarBoletim(parseInt(selecao.value));
+  }else{
+    el("areaBoletim").innerHTML = `<p class="bloco-ajuda" style="margin:0">Crie uma prova primeiro.</p>`;
+  }
+}
+
+el("selProvaBoletim").addEventListener("change", e => {
+  const id = parseInt(e.target.value);
+  if(id) mostrarBoletim(id);
+});
+
+async function mostrarBoletim(provaId){
+  const area = el("areaBoletim");
+  area.innerHTML = `<p class="bloco-ajuda" style="margin:0">Carregando…</p>`;
+  try{
+    const b = await (await pedir(`/api/provas/${provaId}/boletim`)).json();
+
+    let html = `
+      <p class="bloco-ajuda" style="margin:0 0 10px">${b.escola} · ${b.turma}</p>
+      <div class="resumo-numeros">
+        <div><strong>${b.media !== null ? b.media.toFixed(1) : "—"}</strong><span>média da turma</span></div>
+        <div><strong>${b.total_corrigidos}/${b.total_alunos}</strong><span>folhas corrigidas</span></div>
+        <div><strong>${b.maior_nota !== null ? b.maior_nota.toFixed(1) : "—"}</strong><span>maior nota</span></div>
+        <div><strong>${b.menor_nota !== null ? b.menor_nota.toFixed(1) : "—"}</strong><span>menor nota</span></div>
+      </div>
+      <div class="acoes" style="margin-top:6px">
+        <button class="btn btn-neutro" id="btnCsvBoletim">Baixar planilha (CSV)</button>
+      </div>`;
+
+    html += `<h2 class="bloco-titulo" style="margin-top:22px">Notas</h2>
+      <table><thead><tr><th>Aluno</th><th class="numero">Acertos</th>
+      <th class="numero">Nota</th><th></th></tr></thead><tbody>`;
+    b.linhas.forEach(l => {
+      html += l.corrigido
+        ? `<tr><td>${l.aluno_nome}</td><td class="numero">${l.acertos}/${b.prova.total_questoes}</td>
+             <td class="numero"><strong>${l.nota.toFixed(1)}</strong></td><td></td></tr>`
+        : `<tr class="pendente"><td>${l.aluno_nome}</td><td class="numero">—</td>
+             <td class="numero">—</td><td class="marca-pequena">sem folha</td></tr>`;
+    });
+    html += `</tbody></table>`;
+
+    if(b.total_corrigidos){
+      html += `<h2 class="bloco-titulo" style="margin-top:26px">Acerto por questão</h2>
+        <p class="bloco-ajuda">Onde a turma tropeçou — útil para decidir o que revisar.</p>
+        <table><thead><tr><th>Questão</th><th>Resposta</th><th>Acertos</th><th></th></tr></thead><tbody>`;
+      b.acerto_por_questao.forEach(q => {
+        html += `<tr>
+          <td>${q.questao}</td>
+          <td>${q.correta || "—"}</td>
+          <td class="numero">${q.percentual}%</td>
+          <td><div class="barra ${q.percentual < 50 ? "baixo" : ""}">
+                <span style="width:${q.percentual}%"></span></div></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    area.innerHTML = html;
+    const botao = el("btnCsvBoletim");
+    if(botao) botao.addEventListener("click", () => baixarCsv(b));
+  }catch(erro){
+    area.innerHTML = `<div class="aviso aviso-erro"><span>${erro.message}</span></div>`;
+  }
+}
+
+function baixarCsv(b){
+  const linhas = [["escola","turma","prova","aluno","nota","acertos","erros","em_branco","rasuras","total"]];
+  b.linhas.filter(l => l.corrigido).forEach(l => {
+    linhas.push([b.escola, b.turma, b.prova.titulo, l.aluno_nome, l.nota,
+                 l.acertos, l.erros, l.em_branco, l.rasuras, b.prova.total_questoes]);
+  });
+  const csv = linhas.map(l => l.join(";")).join("\n");
+  const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `notas-${b.turma}.csv`.replace(/\s+/g,"-");
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- acesso ---------------- */
+let modoPrimeiraConta = false;
+
+function mostrarTelaAcesso(primeira){
+  modoPrimeiraConta = primeira;
+  el("telaAcesso").classList.remove("oculto");
+  el("campoNome").classList.toggle("oculto", !primeira);
+  // Na primeira conta ainda não existe ticket para apresentar: ele é
+  // criado justamente agora.
+  el("campoTicket").classList.toggle("oculto", primeira);
+  el("dicaSenha").classList.toggle("oculto", !primeira);
+  el("tituloAcesso").textContent = primeira ? "Criar a primeira conta" : "Entrar";
+  el("ajudaAcesso").textContent = primeira
+    ? "Ninguém usou o sistema ainda. Esta será a conta de quem administra."
+    : "Use o email cadastrado.";
+  el("btnAcesso").textContent = primeira ? "Criar conta e entrar" : "Entrar";
+  el("acessoSenha").autocomplete = primeira ? "new-password" : "current-password";
+}
+
+function iniciaisDe(nome){
+  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
+  if(!partes.length) return "?";
+  return (partes[0][0] + (partes.length > 1 ? partes[partes.length-1][0] : "")).toUpperCase();
+}
+
+function esconderTelaAcesso(nome, administrador, papel){
+  papelAtual = papel || (administrador ? "admin" : "");
+  aplicarPapelNaTela();
+  el("telaAcesso").classList.add("oculto");
+  el("areaUsuario").classList.remove("oculto");
+  el("nomeUsuario").textContent = nome;
+  // O papel aparece como etiqueta ao lado do nome: quem usa três tipos
+  // de conta precisa saber, de relance, com qual delas está dentro.
+  el("etiquetaPapel").textContent =
+    ({admin:"Secretaria", membro:"Escola", convidado:"Convidado"})[papelAtual] || "";
+  // Esconde o GRUPO inteiro, e não só o item: um cabeçalho "Sistema"
+  // sozinho, sem nada embaixo, pareceria um defeito da tela.
+  el("grupoSistema").classList.toggle("oculto", !administrador);
+}
+
+function mostrarTicketDeAdministracao(codigo){
+  /* Bloqueia até o administrador confirmar que anotou. Sem o ticket ele
+     não consegue mais entrar, e o código não existe em lugar nenhum
+     além desta tela — o banco guarda só o hash. */
+  return new Promise(resolve => {
+    const tela = el("telaAcesso");
+    tela.innerHTML = `
+      <div class="cartao-acesso">
+        <h2 class="bloco-titulo">Guarde este ticket</h2>
+        <p class="bloco-ajuda">
+          Ele será pedido em todo login. <strong>Não é possível recuperá-lo depois</strong> —
+          o sistema guarda apenas uma versão cifrada.
+        </p>
+        <div class="ticket-novo">
+          <span class="ticket-codigo" id="codigoAdmin">${codigo}</span>
+          <button class="btn-texto" id="btnCopiarTicket">copiar código</button>
+        </div>
+        <button class="btn btn-principal" id="btnConfirmarTicket" disabled>
+          Anotei o ticket, continuar
+        </button>
+        <p class="dica" id="contagemTicket" style="text-align:center;margin-top:8px"></p>
+      </div>`;
+
+    const botao = el("btnConfirmarTicket");
+    let restante = 5;
+    const contagem = setInterval(() => {
+      restante -= 1;
+      el("contagemTicket").textContent =
+        restante > 0 ? `Aguarde ${restante}s para confirmar` : "";
+      if(restante <= 0){ clearInterval(contagem); botao.disabled = false; }
+    }, 1000);
+    el("contagemTicket").textContent = `Aguarde ${restante}s para confirmar`;
+
+    el("btnCopiarTicket").addEventListener("click", () => {
+      navigator.clipboard?.writeText(codigo);
+      el("btnCopiarTicket").textContent = "copiado";
+    });
+    botao.addEventListener("click", () => { clearInterval(contagem); resolve(); });
+  });
+}
+
+/* ---------------- tickets de acesso ---------------- */
+async function carregarTickets(){
+  const area = el("listaTickets");
+  try{
+    const tickets = await (await pedir("/api/tickets")).json();
+    if(!tickets.length){
+      area.innerHTML = `<p class="bloco-ajuda" style="margin:0">Nenhum ticket emitido.</p>`;
+      return;
+    }
+    area.innerHTML = `<table><thead><tr><th>Código</th><th>Para quem</th>
+      <th>Em uso por</th><th>Situação</th><th></th></tr></thead><tbody>` +
+      tickets.map(t => `<tr>
+        <td><code>${t.pista}</code></td>
+        <td>${t.descricao || "—"}</td>
+        <td>${t.usuario || "—"}</td>
+        <td><span class="situacao s-${t.situacao.replace(" ","-")}">${t.situacao}</span></td>
+        <td>${["disponivel","em uso"].includes(t.situacao)
+              ? `<button class="btn btn-perigo" data-revogar="${t.id}">revogar</button>`
+              : ""}</td>
+      </tr>`).join("") + `</tbody></table>`;
+
+    area.querySelectorAll("[data-revogar]").forEach(botao => {
+      botao.addEventListener("click", async () => {
+        await pedir(`/api/tickets/${botao.dataset.revogar}/revogar`, { method:"POST" });
+        await carregarTickets();
+        mostrarAviso("avisoAcessos","ok",
+          "<span>Ticket revogado. Quem usava esse código não entra mais.</span>");
+      });
+    });
+  }catch(erro){
+    area.innerHTML = `<div class="aviso aviso-erro"><span>${erro.message}</span></div>`;
+  }
+}
+
+el("btnEmitirTicket").addEventListener("click", async (evento) => {
+  const botao = evento.currentTarget;
+  botao.disabled = true;
+  try{
+    const dados = await (await pedir("/api/tickets", { method:"POST", body: formulario({
+      descricao: el("ticketDescricao").value.trim(),
+      dias_validade: el("ticketDias").value || "0",
+    })})).json();
+
+    el("ticketEmitido").innerHTML = `
+      <div class="ticket-novo">
+        <strong>Ticket emitido — anote agora</strong>
+        <span class="ticket-codigo">${dados.codigo}</span>
+        <span class="dica">${dados.aviso}</span>
+      </div>`;
+    el("ticketDescricao").value = "";
+    mostrarAviso("avisoAcessos","","");
+    await carregarTickets();
+  }catch(erro){
+    mostrarAviso("avisoAcessos","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+  }
+});
+
+
+
+async function enviarAcesso(){
+  const botao = el("btnAcesso");
+  const email = el("acessoEmail").value.trim();
+  const senha = el("acessoSenha").value;
+  const ticket = el("acessoTicket").value.trim();
+
+  if(!email || !senha){
+    mostrarAviso("avisoAcesso","atencao","<span>Preencha email e senha.</span>");
+    return;
+  }
+  if(!modoPrimeiraConta && !ticket){
+    mostrarAviso("avisoAcesso","atencao",
+      "<span>Informe o ticket de acesso. Quem administra o sistema fornece o código.</span>");
+    return;
+  }
+
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Entrando…';
+
+  try{
+    const rota = modoPrimeiraConta ? "/api/auth/primeira-conta" : "/api/auth/entrar";
+    const corpo = modoPrimeiraConta
+      ? formulario({ email, senha, nome: el("acessoNome").value.trim() })
+      : formulario({ email, senha, ticket });
+
+    const dados = await (await pedir(rota, { method:"POST", body: corpo })).json();
+
+    if(dados.ticket){
+      // Único momento em que o código existe em texto. Fechar a tela
+      // sem mostrar deixaria o administrador trancado do lado de fora.
+      await mostrarTicketDeAdministracao(dados.ticket);
+    }
+
+    esconderTelaAcesso(dados.nome, dados.administrador, dados.papel);
+    el("acessoSenha").value = "";
+    el("acessoTicket").value = "";
+    mostrarAviso("avisoAcesso","","");
+    await iniciarSistema();
+  }catch(erro){
+    mostrarAviso("avisoAcesso","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+}
+
+el("btnAcesso").addEventListener("click", enviarAcesso);
+["acessoEmail","acessoSenha","acessoNome","acessoTicket"].forEach(id => {
+  el(id).addEventListener("keydown", e => { if(e.key === "Enter") enviarAcesso(); });
+});
+
+el("btnSair").addEventListener("click", async () => {
+  await fetch("/api/auth/sair", { method:"POST" });
+  location.reload();
+});
+
+/* ---------------- histórico do aluno ---------------- */
+async function carregarPainelAlunos(){
+  if(!turmaAtual){
+    el("listaAlunosHistorico").innerHTML =
+      `<li><span class="nome marca-pequena">Selecione uma turma na aba Turmas.</span></li>`;
+    return;
+  }
+
+  const desempenho = await (await pedir(`/api/turmas/${turmaAtual}/desempenho`)).json();
+  const lista = el("listaAlunosHistorico");
+  lista.innerHTML = "";
+
+  desempenho.alunos.forEach(aluno => {
+    const item = document.createElement("li");
+    item.className = "linha-clicavel";
+    item.innerHTML = `
+      <span class="nome">${aluno.aluno_nome}</span>
+      <span class="marca-pequena">${aluno.provas_feitas} prova(s)</span>
+      <strong>${aluno.media !== null ? aluno.media.toFixed(1) : "—"}</strong>`;
+    item.addEventListener("click", () => mostrarHistorico(aluno.aluno_id));
+    lista.appendChild(item);
+  });
+
+  const medias = el("mediasTurma");
+  medias.innerHTML = desempenho.provas.length
+    ? `<table><thead><tr><th>Prova</th><th class="numero">Corrigidas</th>
+       <th class="numero">Média</th></tr></thead><tbody>` +
+      desempenho.provas.map(p => `<tr>
+        <td>${p.titulo}</td>
+        <td class="numero">${p.corrigidas}</td>
+        <td class="numero"><strong>${p.media !== null ? p.media.toFixed(1) : "—"}</strong></td>
+      </tr>`).join("") + `</tbody></table>`
+    : `<p class="bloco-ajuda" style="margin:0">Nenhuma prova corrigida ainda.</p>`;
+}
+
+async function mostrarHistorico(alunoId){
+  const bloco = el("blocoHistorico");
+  bloco.innerHTML = `<p class="bloco-ajuda" style="margin:0">Carregando…</p>`;
+
+  try{
+    const h = await (await pedir(`/api/alunos/${alunoId}/historico`)).json();
+
+    if(!h.total_provas){
+      bloco.innerHTML = `<h2 class="bloco-titulo">${h.aluno_nome}</h2>
+        <p class="bloco-ajuda" style="margin:0">Ainda não tem nenhuma prova corrigida.</p>`;
+      return;
+    }
+
+    const selo = h.tendencia
+      ? `<span class="selo-tendencia t-${h.tendencia}">${
+          {subindo:"melhorando", caindo:"em queda", estavel:"estável"}[h.tendencia]}</span>`
+      : "";
+
+    bloco.innerHTML = `
+      <h2 class="bloco-titulo">${h.aluno_nome}${selo}</h2>
+      <p class="bloco-ajuda">${h.escola} · ${h.turma}</p>
+      <div class="resumo-numeros">
+        <div><strong>${h.media.toFixed(1)}</strong><span>média do ano</span></div>
+        <div><strong>${h.total_provas}</strong><span>provas feitas</span></div>
+        <div><strong>${h.maior_nota.toFixed(1)}</strong><span>melhor</span></div>
+        <div><strong>${h.menor_nota.toFixed(1)}</strong><span>pior</span></div>
+      </div>
+      <div class="evolucao">${graficoEvolucao(h.avaliacoes)}</div>
+      <table><thead><tr><th>Prova</th><th class="numero">Acertos</th>
+        <th class="numero">Nota</th></tr></thead><tbody>` +
+      h.avaliacoes.map(a => `<tr>
+        <td>${a.titulo}${a.disciplina ? ` <span class="marca-pequena">· ${a.disciplina}</span>` : ""}</td>
+        <td class="numero">${a.acertos}/${a.total_questoes}</td>
+        <td class="numero"><strong>${a.nota.toFixed(1)}</strong></td>
+      </tr>`).join("") + `</tbody></table>`;
+  }catch(erro){
+    bloco.innerHTML = `<div class="aviso aviso-erro"><span>${erro.message}</span></div>`;
+  }
+}
+
+function graficoEvolucao(avaliacoes){
+  /* SVG na mão em vez de biblioteca de gráfico: são poucas notas numa
+     escala fixa de 0 a 10, e uma dependência a mais custaria mais do
+     que estas trinta linhas. */
+  /* viewBox largo e sem preserveAspectRatio="none": esticar um quadrado
+     na largura do bloco deformaria os números junto com o desenho. */
+  const largura = 320, altura = 120, margem = 20;
+  const n = avaliacoes.length;
+  const x = i => n === 1 ? largura/2 : margem + (i * (largura - 2*margem)) / (n - 1);
+  const y = nota => altura - margem - (nota / 10) * (altura - 2*margem);
+
+  const linha = avaliacoes.map((a,i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(a.nota).toFixed(1)}`).join(" ");
+  const pontos = avaliacoes.map((a,i) => `
+    <circle cx="${x(i).toFixed(1)}" cy="${y(a.nota).toFixed(1)}" r="4" fill="#067821"/>
+    <text x="${x(i).toFixed(1)}" y="${(y(a.nota) - 10).toFixed(1)}" font-size="11"
+          text-anchor="middle" fill="#1B2A45" font-weight="600">${a.nota.toFixed(1)}</text>
+    <text x="${x(i).toFixed(1)}" y="${(altura - 3).toFixed(1)}" font-size="9"
+          text-anchor="middle" fill="#5A6B85">${i + 1}</text>`).join("");
+
+  // Linha da média 6,0: referência que o professor lê de imediato.
+  const corte = y(6);
+  return `<svg viewBox="0 0 ${largura} ${altura}" role="img"
+               aria-label="Evolução das notas ao longo do ano">
+    <line x1="14" y1="${corte.toFixed(1)}" x2="${largura - 6}" y2="${corte.toFixed(1)}"
+          stroke="#B3261E" stroke-width="1" stroke-dasharray="5 4" opacity="0.5"/>
+    <text x="0" y="${(corte + 3).toFixed(1)}" font-size="9" fill="#B3261E">6,0</text>
+    <path d="${linha}" fill="none" stroke="#013682" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    ${pontos}
+  </svg>`;
+}
+
+/* ---------------- backup ---------------- */
+el("btnBackup").addEventListener("click", async (evento) => {
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Gerando…';
+
+  try{
+    const resposta = await pedir("/api/admin/backup");
+    const url = URL.createObjectURL(await resposta.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `backup-provafacil-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    mostrarAviso("avisoBackup","ok",
+      "<span><strong>Backup salvo.</strong> Guarde fora desta máquina.</span>");
+  }catch(erro){
+    mostrarAviso("avisoBackup","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+/* ---------------- limpeza dos dados ---------------- */
+el("btnLimparDados").addEventListener("click", async (evento) => {
+  const confirmacao = el("confirmarLimpeza").value.trim();
+
+  if(!el("avisoBackup").innerHTML && !confirm(
+      "Você já baixou o backup? Depois de apagar não há como recuperar.")){
+    return;
+  }
+
+  if(confirmacao.toUpperCase() !== "APAGAR TUDO"){
+    mostrarAviso("avisoLimpeza","atencao",
+      "<span>Para confirmar, digite exatamente <strong>APAGAR TUDO</strong> no campo.</span>");
+    return;
+  }
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Apagando…';
+
+  try{
+    const r = await (await pedir("/api/admin/limpar-dados", {
+      method:"POST", body: formulario({ confirmacao })
+    })).json();
+
+    const a = r.apagados;
+    mostrarAviso("avisoLimpeza","ok",
+      `<span><strong>Dados apagados.</strong> ${a.escolas} escola(s), ${a.turmas} turma(s),
+       ${a.alunos} aluno(s), ${a.provas} prova(s) e ${a.resultados} nota(s).</span>`);
+    el("confirmarLimpeza").value = "";
+
+    // Tudo o que estava carregado na tela agora aponta para o vazio.
+    escolaAtual = null; turmaAtual = null; provaAtual = null;
+    analiseIniciada = false; corrigidosNaSessao = [];
+    el("listaSessao").innerHTML = "";
+    el("blocoCorrigidosAgora").classList.add("oculto");
+    await carregarEscolas();
+  }catch(erro){
+    mostrarAviso("avisoLimpeza","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+/* ---------------- cartão avulso (convidado) ---------------- */
+function montarFormularioAvulso(formato){
+  const { texto } = gabaritoEmTexto();
+  const dados = new FormData();
+  dados.append("gabarito", texto);
+  dados.append("prova_id", el("provaIdAvulso")?.value.trim() || "1");
+  dados.append("titulo", el("tituloProva").value.trim() || "Cartão-resposta");
+  dados.append("disciplina", el("disciplinaProva").value.trim());
+  dados.append("formato", formato);
+
+  const anexo = el("arquivoProva").files[0];
+  if(anexo && formato === "pdf"){
+    dados.append("incluir_prova", "true");
+    dados.append("file", anexo);
+  }
+  return dados;
+}
+
+async function gerarCartaoAvulso(evento){
+  const { texto, faltando } = gabaritoEmTexto();
+  if(faltando.length){
+    const lista = faltando.slice(0,8).join(", ") + (faltando.length > 8 ? "…" : "");
+    mostrarAviso("avisoProvas","atencao",
+      `<span><strong>Falta marcar a resposta</strong> das questões ${lista}.</span>`);
+    return;
+  }
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Gerando…';
+
+  try{
+    // Prévia primeiro, para o professor conferir antes de imprimir.
+    const previa = await pedir("/api/cartao", {
+      method:"POST", body: montarFormularioAvulso("png")
+    });
+    el("molduraPrevia").innerHTML =
+      `<img src="${URL.createObjectURL(await previa.blob())}" alt="Prévia do cartão">`;
+
+    const pdf = await pedir("/api/cartao", {
+      method:"POST", body: montarFormularioAvulso("pdf")
+    });
+    const url = URL.createObjectURL(await pdf.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "cartao-resposta.pdf";
+    link.click();
+    URL.revokeObjectURL(url);
+
+    mostrarAviso("avisoProvas","ok",
+      `<span><strong>Cartão baixado.</strong> Imprima em tamanho real (100%).
+       O nome do aluno é escrito à mão: neste modo nada fica guardado,
+       então anote as notas ou baixe o relatório depois de corrigir.</span>`);
+  }catch(erro){
+    mostrarAviso("avisoProvas","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+}
+
+/* ---------------- contas de acesso ---------------- */
+async function carregarPainelAcessos(){
+  await prepararUsuarios();
+  await carregarTickets();
+}
+
+let papeisDisponiveis = [];
+
+async function prepararUsuarios(){
+  if(!papeisDisponiveis.length){
+    papeisDisponiveis = await (await pedir("/api/papeis")).json();
+    el("usuarioPapel").innerHTML = papeisDisponiveis
+      .map(p => `<option value="${p.codigo}">${p.nome}</option>`).join("");
+    el("usuarioPapel").value = "membro";
+    el("usuarioPapel").addEventListener("change", ajustarFormularioUsuario);
+  }
+
+  // A lista de escolas muda conforme o cadastro; recarrega sempre.
+  const escolas = await (await pedir("/api/escolas")).json();
+  el("usuarioEscola").innerHTML = escolas.length
+    ? escolas.map(e => `<option value="${e.id}">${e.nome}</option>`).join("")
+    : `<option value="">Cadastre uma escola primeiro</option>`;
+
+  ajustarFormularioUsuario();
+  await carregarUsuarios();
+}
+
+function ajustarFormularioUsuario(){
+  const papel = el("usuarioPapel").value;
+  const escolhido = papeisDisponiveis.find(p => p.codigo === papel);
+  el("descricaoPapel").textContent = escolhido ? escolhido.descricao : "";
+
+  /* Só o acesso de escola precisa de vínculo. Mostrar o campo para
+     admin e convidado sugeriria que a escolha importa, e ela não
+     importa — admin vê tudo, convidado não vê nada. */
+  el("campoEscolaUsuario").classList.toggle("oculto", papel !== "membro");
+}
+
+el("btnSenhaSugerida").addEventListener("click", () => {
+  /* Senha provisória legível: o administrador vai ditar isso por
+     telefone ou escrever num papel. Caracteres ambíguos ficam de fora
+     pelo mesmo motivo do ticket. */
+  const silabas = ["ba","te","ri","co","mu","na","sol","dia","luz","ver","pa","lo"];
+  const sorteio = n => silabas[Math.floor(Math.random()*silabas.length)];
+  const numero = String(Math.floor(Math.random()*90) + 10);
+  el("usuarioSenha").value = sorteio() + sorteio() + "-" + sorteio() + sorteio() + numero;
+});
+
+el("btnCriarUsuario").addEventListener("click", async (evento) => {
+  const papel = el("usuarioPapel").value;
+  const dados = {
+    nome: el("usuarioNome").value.trim(),
+    email: el("usuarioEmail").value.trim(),
+    senha: el("usuarioSenha").value,
+    papel,
+  };
+
+  if(!dados.nome || !dados.email || !dados.senha){
+    mostrarAviso("avisoUsuario","atencao","<span>Preencha nome, email e senha.</span>");
+    return;
+  }
+  if(papel === "membro"){
+    const escola = el("usuarioEscola").value;
+    if(!escola){
+      mostrarAviso("avisoUsuario","atencao",
+        "<span>Acesso de escola precisa de uma escola vinculada. Cadastre uma antes.</span>");
+      return;
+    }
+    dados.escola_id = escola;
+  }
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Criando…';
+
+  try{
+    const criado = await (await pedir("/api/usuarios", {
+      method:"POST", body: formulario(dados)
+    })).json();
+
+    mostrarAviso("avisoUsuario","ok",
+      `<span><strong>Conta de ${criado.nome} criada.</strong>
+       Agora emita um ticket abaixo e entregue junto com a senha —
+       sem o ticket ela não entra.</span>`);
+
+    ["usuarioNome","usuarioEmail","usuarioSenha"].forEach(id => el(id).value = "");
+    await carregarUsuarios();
+  }catch(erro){
+    mostrarAviso("avisoUsuario","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+async function carregarUsuarios(){
+  const area = el("listaUsuarios");
+  try{
+    const contas = await (await pedir("/api/usuarios")).json();
+    if(!contas.length){
+      area.innerHTML = `<p class="bloco-ajuda" style="margin:0">Nenhuma conta ainda.</p>`;
+      return;
+    }
+
+    area.innerHTML = `<table><thead><tr>
+        <th>Pessoa</th><th>Tipo</th><th>Escola</th><th>Último acesso</th><th></th>
+      </tr></thead><tbody>` +
+      contas.map(c => `<tr>
+        <td><strong>${c.nome}</strong><br><span class="marca-pequena">${c.email}</span></td>
+        <td><span class="etiqueta e-${c.papel === "admin" ? "critico" : "adequado"}">${c.papel_nome}</span></td>
+        <td>${c.escola || "—"}</td>
+        <td class="marca-pequena">${c.ultimo_acesso
+            ? new Date(c.ultimo_acesso).toLocaleDateString("pt-BR") : "nunca entrou"}</td>
+        <td>${c.papel === "admin"
+            ? ""
+            : `<button class="btn btn-perigo" data-remover="${c.id}"
+                       data-nome="${c.nome}">remover</button>`}</td>
+      </tr>`).join("") + `</tbody></table>`;
+
+    area.querySelectorAll("[data-remover]").forEach(botao => {
+      botao.addEventListener("click", async () => {
+        /* Sem confirmação, um clique errado tira o acesso de uma escola
+           no meio do período de correção. */
+        if(!confirm(`Remover o acesso de ${botao.dataset.nome}? As sessões abertas caem na hora.`)) return;
+        try{
+          await pedir(`/api/usuarios/${botao.dataset.remover}`, { method:"DELETE" });
+          await carregarUsuarios();
+          mostrarAviso("avisoUsuario","ok","<span>Acesso removido.</span>");
+        }catch(erro){
+          mostrarAviso("avisoUsuario","erro",`<span>${erro.message}</span>`);
+        }
+      });
+    });
+  }catch(erro){
+    area.innerHTML = `<div class="aviso aviso-erro"><span>${erro.message}</span></div>`;
+  }
+}
+
+/* ---------------- data no cabeçalho ---------------- */
+(function mostrarData(){
+  /* Mesmo lugar em que o site da Prefeitura mostra a data. Não é
+     função: é o tipo de detalhe que faz a tela parecer cuidada. */
+  const hoje = new Date();
+  const dia = hoje.toLocaleDateString("pt-BR", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+  const alvo = el("dataHoje");
+  if(alvo) alvo.textContent = dia.charAt(0).toUpperCase() + dia.slice(1);
+})();
+
+/* ---------------- título da página ---------------- */
+/* Grupo de cada tela, para a trilha dizer onde a pessoa está. Puro
+   acabamento: se sair, nenhuma função se perde. */
+const GRUPOS = {
+  turmas:"Cadastro", provas:"Avaliação", corrigir:"Avaliação",
+  boletim:"Resultados", alunos:"Resultados", analise:"Resultados",
+  comparativo:"Resultados", acessos:"Sistema", ajuda:"Ajuda",
+};
+
+function atualizarCabecalho(painel){
+  const item = document.querySelector(`.item-menu[data-painel="${painel}"]`);
+  const nome = item ? item.textContent.trim() : "";
+  el("tituloPagina").textContent = nome;
+  el("caminhoPagina").innerHTML =
+    `${GRUPOS[painel] || "Avalia FRG"} &nbsp;›&nbsp; <b>${nome}</b>`;
+
+  // Contexto à direita: escola e turma em que a pessoa está trabalhando.
+  // Evita a dúvida de "esta nota foi para qual turma?".
+  const seletorTurma = el("selTurma");
+  const seletorEscola = el("selEscola");
+  const turma = seletorTurma?.selectedOptions?.[0]?.textContent?.split(" — ")[0];
+  const escola = seletorEscola?.selectedOptions?.[0]?.textContent;
+  el("contextoPagina").textContent =
+    (escola && turma && papelAtual !== "convidado") ? `${escola} · ${turma}` : "";
+}
+
+/* ---------------- modo explicação ---------------- */
+/* A preferência vive só nesta aba. Precisa ser declarada ANTES do uso:
+   com `const`, ler a variável acima da declaração derruba o script
+   inteiro, e a tela abriria em branco. */
+const preferencias = { explicacao: false };
+let modoExplicacao = preferencias.explicacao;
+
+function textoDaExplicacao(painel){
+  const conteudo = (typeof AJUDA !== "undefined") ? AJUDA[painel] : null;
+  if(!conteudo) return "";
+
+  let html = `<h3>${conteudo.titulo}</h3><div>${conteudo.resumo}</div>`;
+
+  if(conteudo.passos?.length){
+    html += "<ol>" + conteudo.passos.map(p =>
+      `<li><span class="rotulo-passo">${p.titulo}.</span> ${p.texto}</li>`).join("") + "</ol>";
+  }
+  if(conteudo.cuidados?.length){
+    html += `<div class="alerta">${conteudo.cuidados[0]}</div>`;
+  }
+  html += `<div style="margin-top:12px;font-size:13.5px">
+    Explicação completa desta e das outras telas em <b>Ajuda → Como usar</b>.</div>`;
+  return html;
+}
+
+function aplicarExplicacao(){
+  document.querySelectorAll(".caixa-explicacao").forEach(c => c.remove());
+  el("btnExplicacao").setAttribute("aria-pressed", modoExplicacao);
+  el("rotuloExplicacao").textContent = modoExplicacao
+    ? "Explicação ligada" : "Modo explicação";
+  if(!modoExplicacao) return;
+
+  PAINEIS.forEach(nome => {
+    const secao = el("painel-" + nome);
+    const texto = textoDaExplicacao(nome);
+    if(!secao || !texto) return;
+    const caixa = document.createElement("div");
+    caixa.className = "caixa-explicacao";
+    caixa.innerHTML = texto;
+    secao.insertBefore(caixa, secao.firstChild);
+  });
+}
+
+el("btnExplicacao").addEventListener("click", () => {
+  modoExplicacao = !modoExplicacao;
+  preferencias.explicacao = modoExplicacao;
+  aplicarExplicacao();
+});
+
+function montarManual(){
+  const area = el("areaAjuda");
+  if(typeof AJUDA === "undefined"){
+    area.innerHTML = `<div class="bloco"><div class="aviso aviso-erro"><span>
+      O arquivo de ajuda não foi carregado. Confira se
+      <code>static/ajuda.js</code> está na pasta.</span></div></div>`;
+    return;
+  }
+
+  area.innerHTML = PAINEIS.filter(nome => AJUDA[nome]).map(nome => {
+    const c = AJUDA[nome];
+    let html = `<div class="artigo-ajuda"><h2>${c.titulo}</h2>
+      <div class="resumo">${c.resumo}</div>`;
+
+    if(c.passos?.length){
+      html += `<h4>Passo a passo</h4>` + c.passos.map((p, i) => `
+        <div class="passo-ajuda">
+          <span class="numero">${i + 1}</span>
+          <div><b>${p.titulo}</b><br>${p.texto}</div>
+        </div>`).join("");
+    }
+    if(c.campos?.length){
+      html += `<h4>O que cada campo significa</h4>` + c.campos.map(campo => `
+        <div class="campo-ajuda"><b>${campo.nome}</b><span>${campo.texto}</span></div>`).join("");
+    }
+    if(c.cuidados?.length){
+      html += `<h4>O que costuma dar errado</h4>` + c.cuidados.map(t => `
+        <div class="cuidado-ajuda">${t}</div>`).join("");
+    }
+    if(c.perguntas?.length){
+      html += `<h4>Dúvidas frequentes</h4>` + c.perguntas.map(p => `
+        <div class="pergunta-ajuda">
+          <div class="q">${p.q}</div><div class="a">${p.a}</div>
+        </div>`).join("");
+    }
+    return html + `</div>`;
+  }).join("");
+}
+
+el("btnImprimirAjuda").addEventListener("click", () => window.print());
+
+/* ---------------- ajustes por papel ---------------- */
+function aplicarPapelNaTela(){
+  /* Esconder o que o papel não pode usar é cortesia, não segurança:
+     quem manda é o servidor, que responde 403. Mas um menu cheio de
+     itens que dão erro ao clicar ensina o professor a desconfiar da
+     tela inteira. */
+  const eConvidado = papelAtual === "convidado";
+  const eAdmin = papelAtual === "admin";
+
+  document.querySelectorAll('.item-menu[data-painel]').forEach(item => {
+    const painel = item.dataset.painel;
+    let permitido = true;
+    if(eConvidado) permitido = painel === "provas" || painel === "corrigir";
+    else if(!eAdmin) permitido = painel !== "comparativo" && painel !== "acessos";
+    item.classList.toggle("oculto", !permitido);
+  });
+
+  // Grupo sem nenhum item visível vira um título solto na lateral.
+  document.querySelectorAll(".grupo-menu").forEach(grupo => {
+    if(grupo.id === "grupoSistema") return;
+    const visiveis = [...grupo.querySelectorAll(".item-menu")]
+      .filter(i => !i.classList.contains("oculto"));
+    grupo.classList.toggle("oculto", visiveis.length === 0);
+  });
+
+  document.querySelectorAll("[data-somente-admin]").forEach(elemento =>
+    elemento.classList.toggle("oculto", !eAdmin));
+
+  if(eConvidado){
+    // O convidado não tem turma nem prova salva: o cartão dele é avulso,
+    // com o gabarito no próprio QR. O rótulo do botão precisa dizer isso,
+    // senão ele procura uma turma que não existe.
+    const aviso = el("ajudaTurmaProva");
+    if(aviso) aviso.textContent =
+      "Modo convidado: o cartão sai com espaço para o aluno escrever o nome, " +
+      "e nada é guardado no sistema.";
+    const botao = el("btnCriarProva");
+    if(botao) botao.textContent = "Gerar cartão-resposta";
+  }
+
+  // Se o painel aberto não é mais permitido, volta para um que seja.
+  const atual = document.querySelector('.item-menu[aria-current="true"]');
+  if(!atual || atual.classList.contains("oculto")){
+    const primeiro = document.querySelector('.item-menu:not(.oculto)');
+    if(primeiro) abrirPainel(primeiro.dataset.painel);
+  }
+}
+
+/* ---------------- relatório da sessão ---------------- */
+async function baixarRelatorio(formato){
+  if(!corrigidosNaSessao.length){
+    mostrarAviso("avisoRelatorio","atencao","<span>Corrija ao menos uma folha antes.</span>");
+    return;
+  }
+
+  const pedido = {
+    /* O corpo vai como JSON, e não como formulário: campo de multipart
+       tem limite de tamanho, e uma turma grande estourava esse limite
+       silenciosamente — o JSON chegava cortado no meio. */
+    correcoes: corrigidosNaSessao,
+    titulo: el("relTitulo").value.trim() || "Relatório da turma",
+    turma: el("relTurma").value.trim(),
+    professor: el("relProfessor").value.trim(),
+    disciplina: el("relDisciplina").value.trim(),
+    formato,
+  };
+
+  try{
+    const resposta = await pedir("/api/relatorio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pedido),
+    });
+    const url = URL.createObjectURL(await resposta.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${pedido.titulo.replace(/\s+/g,"-")}.${formato}`;
+    link.click();
+    URL.revokeObjectURL(url);
+    mostrarAviso("avisoRelatorio","ok",
+      `<span><strong>Arquivo baixado.</strong> ${corrigidosNaSessao.length} folha(s) no relatório.</span>`);
+  }catch(erro){
+    mostrarAviso("avisoRelatorio","erro",`<span>${erro.message}</span>`);
+  }
+}
+
+el("btnRelatorioPdf").addEventListener("click", () => baixarRelatorio("pdf"));
+el("btnRelatorioCsv").addEventListener("click", () => baixarRelatorio("csv"));
+el("btnLimparSessao").addEventListener("click", () => {
+  corrigidosNaSessao = [];
+  el("listaSessao").innerHTML = "";
+  el("blocoCorrigidosAgora").classList.add("oculto");
+  mostrarAviso("avisoRelatorio","","");
+});
+
+/* ---------------- correção em massa ---------------- */
+el("arquivoLote").addEventListener("change", async (evento) => {
+  const arquivo = evento.target.files[0];
+  el("btnCorrigirLote").disabled = !arquivo;
+  mostrarAviso("avisoLote","","");
+  if(!arquivo) return;
+
+  // Pergunta ao servidor quantas folhas há ANTES de começar. Sem isso
+  // o professor fica olhando uma tela parada, sem saber se travou.
+  try{
+    const dados = new FormData();
+    dados.append("file", arquivo);
+    const info = await (await pedir("/api/contar-folhas", { method:"POST", body: dados })).json();
+    el("dicaLote").textContent = info.folhas
+      ? `${info.folhas} folha(s) encontradas · leva cerca de ${info.segundos_estimados}s`
+      : "Não reconheci folhas neste arquivo.";
+  }catch(e){
+    el("dicaLote").textContent = "PDF digitalizado ou ZIP de imagens.";
+  }
+});
+
+el("btnCorrigirLote").addEventListener("click", async (evento) => {
+  const arquivo = el("arquivoLote").files[0];
+  if(!arquivo) return;
+
+  const botao = evento.currentTarget;
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.innerHTML = '<span class="carregando"></span> Corrigindo a turma…';
+  mostrarAviso("avisoLote","atencao",
+    "<span>Pode levar alguns segundos por folha. Não feche esta página.</span>");
+
+  try{
+    const dados = new FormData();
+    dados.append("file", arquivo);
+    const lote = await (await pedir("/api/corrigir-arquivo", { method:"POST", body: dados })).json();
+    desenharLote(lote);
+    lote.itens.filter(i => i.sucesso).forEach(i => registrarNaSessao(i.resultado));
+    mostrarAviso("avisoLote","ok",
+      `<span><strong>${lote.total_corrigidos} de ${lote.total_enviados} folhas corrigidas.</strong>
+       As notas já estão no boletim.</span>`);
+  }catch(erro){
+    mostrarAviso("avisoLote","erro",`<span>${erro.message}</span>`);
+  }finally{
+    botao.disabled = false;
+    botao.textContent = original;
+  }
+});
+
+/* ---------------- comparar escolas ---------------- */
+let comparativoIniciado = false;
+
+async function prepararComparativo(){
+  if(!comparativoIniciado){
+    const [escolas, anos] = await Promise.all([
+      (await pedir("/api/escolas")).json(),
+      (await pedir("/api/anos-escolares")).json(),
+    ]);
+
+    el("escolasComparar").innerHTML = escolas.length > 1
+      ? escolas.map(e => `<label>
+           <input type="checkbox" value="${e.id}"> ${e.nome}
+         </label>`).join("")
+      : `<span class="marca-pequena">Cadastre pelo menos duas escolas para comparar.</span>`;
+
+    el("compAno").innerHTML = `<option value="">Todos os anos</option>` +
+      anos.map(a => `<option value="${a.codigo}">${a.nome}</option>`).join("");
+
+    el("btnComparar").addEventListener("click", carregarComparativo);
+    comparativoIniciado = true;
+  }
+}
+
+async function carregarComparativo(){
+  const marcadas = [...el("escolasComparar").querySelectorAll("input:checked")]
+    .map(i => i.value);
+
+  if(marcadas.length < 2){
+    mostrarAviso("avisoComparar","atencao",
+      "<span>Selecione pelo menos <strong>duas escolas</strong>.</span>");
+    return;
+  }
+  mostrarAviso("avisoComparar","","");
+
+  const parametros = new URLSearchParams({ escolas: marcadas.join(",") });
+  if(el("compAno").value) parametros.set("ano_escolar", el("compAno").value);
+  if(el("compDisciplina").value.trim()) parametros.set("disciplina", el("compDisciplina").value.trim());
+
+  const area = el("areaComparativo");
+  area.innerHTML = `<div class="bloco"><p class="bloco-ajuda" style="margin:0">Comparando…</p></div>`;
+  try{
+    const d = await (await pedir(`/api/comparativo?${parametros}`)).json();
+    area.innerHTML = desenharComparativo(d);
+    area.querySelectorAll("[data-copiar]").forEach(botao => {
+      botao.addEventListener("click", () => {
+        navigator.clipboard.writeText(botao.dataset.copiar);
+        botao.textContent = "copiado";
+        setTimeout(() => { botao.textContent = "copiar texto"; }, 1600);
+      });
+    });
+  }catch(erro){
+    area.innerHTML = `<div class="bloco"><div class="aviso aviso-erro"><span>${erro.message}</span></div></div>`;
+  }
+}
+
+function desenharComparativo(d){
+  let html = "";
+
+  if(d.avisos.length){
+    html += `<div class="bloco">` + d.avisos.map(a =>
+      `<div class="aviso aviso-atencao"><span>${a}</span></div>`).join("") + `</div>`;
+  }
+
+  if(!d.escolas.length) return html || `<div class="bloco">
+    <p class="bloco-ajuda" style="margin:0">Nada para comparar neste recorte.</p></div>`;
+
+  // --- desempenho geral, sempre com a margem de erro ao lado -------
+  html += `<div class="bloco">
+    <h2 class="bloco-titulo">Desempenho geral</h2>
+    <p class="bloco-ajuda">Recorte: ${d.recorte.ano_escolar} · ${d.recorte.disciplina}.
+       O ± é a margem de erro: dentro dela, os números não se distinguem.</p>
+    <table><thead><tr><th>Escola</th><th class="numero">Alunos</th>
+      <th class="numero">Respostas</th><th class="numero">Média</th>
+      <th class="numero">Acerto</th><th></th></tr></thead><tbody>` +
+    d.escolas.map(e => `<tr>
+      <td><strong>${e.escola}</strong></td>
+      <td class="numero">${e.alunos}</td>
+      <td class="numero">${e.respostas}</td>
+      <td class="numero">${e.media !== null ? e.media.toFixed(1) : "—"}</td>
+      <td class="numero"><strong>${e.percentual_acerto ?? "—"}%</strong>
+        ${e.margem_erro !== null ? `<span class="marca-pequena"> ± ${e.margem_erro}</span>` : ""}</td>
+      <td>${e.comparavel ? "" : '<span class="etiqueta e-amostra">amostra pequena</span>'}</td>
+    </tr>`).join("") + `</tbody></table></div>`;
+
+  // --- leitura das diferenças -------------------------------------
+  if(d.diferencas.length){
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">O que dá para afirmar</h2>
+      <p class="bloco-ajuda">Diferença que cabe dentro do acaso das amostras é relatada como empate.</p>` +
+      d.diferencas.map(x => `
+        <div class="orientacao ${x.significativa ? "p-atencao" : ""}">
+          <div class="topo-linha">
+            <span class="${x.significativa ? "real" : "empate"}">
+              ${x.significativa ? "diferença real" : "empate técnico"}</span>
+            <button class="btn-texto" style="margin-left:auto"
+                    data-copiar="${x.leitura.replace(/"/g,"&quot;")}">copiar texto</button>
+          </div>
+          <p>${x.leitura}</p>
+        </div>`).join("") + `</div>`;
+  }
+
+  // --- conteúdo a conteúdo ----------------------------------------
+  if(d.conteudos.length){
+    const escolas = d.conteudos[0].celulas.map(c => c.escola);
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">Conteúdo a conteúdo</h2>
+      <p class="bloco-ajuda">Só aparecem conteúdos classificados em todas as escolas escolhidas.</p>
+      <table><thead><tr><th>Conteúdo</th>` +
+      escolas.map(e => `<th class="numero">${e}</th>`).join("") +
+      `<th>Diferença</th></tr></thead><tbody>` +
+      d.conteudos.map(linha => `<tr>
+        <td><strong>${linha.conteudo}</strong></td>` +
+        linha.celulas.map(c => `<td class="numero">
+            ${c.percentual_acerto ?? "—"}%
+            <span class="marca-pequena">±${c.margem_erro ?? "—"} · ${c.respostas}</span>
+          </td>`).join("") +
+        `<td>${linha.vao
+            ? (linha.vao.significativa
+                ? `<span class="real">${Math.abs(linha.vao.diferenca)} pts</span>
+                   <span class="marca-pequena">${linha.vao.melhor} acima</span>`
+                : `<span class="empate">dentro da margem</span>`)
+            : "—"}</td>
+      </tr>`).join("") + `</tbody></table></div>`;
+  }
+
+  html += `<div class="bloco"><div class="aviso aviso-atencao"><span>
+    <strong>Cuidado ao ler esta tela.</strong> Perfil de entrada dos alunos,
+    contexto do bairro e rotatividade de professores não estão nestes dados.
+    A comparação mostra onde há diferença de desempenho, não qual escola
+    “é melhor”.</span></div></div>`;
+
+  return html;
+}
+
+/* ---------------- análise pedagógica ---------------- */
+let anosEscolares = [];
+let analiseIniciada = false;
+
+async function prepararAnalise(){
+  if(!analiseIniciada){
+    const [escolas, anos] = await Promise.all([
+      (await pedir("/api/escolas")).json(),
+      (await pedir("/api/anos-escolares")).json(),
+    ]);
+    anosEscolares = anos;
+
+    el("filtroEscola").innerHTML = escolas.length
+      ? escolas.map(e => `<option value="${e.id}">${e.nome}</option>`).join("")
+      : `<option value="">Cadastre uma escola primeiro</option>`;
+    if(escolaAtual) el("filtroEscola").value = escolaAtual;
+
+    el("filtroAno").innerHTML = `<option value="">Todos os anos</option>` +
+      anos.map(a => `<option value="${a.codigo}">${a.nome}</option>`).join("");
+
+    ["filtroEscola","filtroAno","filtroDisciplina","filtroPeriodo"].forEach(id =>
+      el(id).addEventListener("change", carregarAnalise));
+    el("btnCsvAnalise").addEventListener("click", baixarAnaliseCsv);
+    analiseIniciada = true;
+  }
+  await carregarAnalise();
+}
+
+function filtrosAnalise(){
+  const parametros = new URLSearchParams();
+  const ano = el("filtroAno").value;
+  const disciplina = el("filtroDisciplina").value;
+  const dias = el("filtroPeriodo").value;
+  if(ano) parametros.set("ano_escolar", ano);
+  if(disciplina) parametros.set("disciplina", disciplina);
+  if(dias) parametros.set("dias", dias);
+  return parametros;
+}
+
+async function carregarAnalise(){
+  const escolaId = el("filtroEscola").value;
+  const area = el("areaAnalise");
+  if(!escolaId){
+    area.innerHTML = `<div class="bloco"><p class="bloco-ajuda" style="margin:0">
+      Cadastre uma escola e corrija ao menos uma prova.</p></div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="bloco"><p class="bloco-ajuda" style="margin:0">Analisando…</p></div>`;
+  try{
+    const dados = await (await pedir(
+      `/api/escolas/${escolaId}/analise?${filtrosAnalise()}`)).json();
+
+    // O seletor de disciplina é preenchido pelo próprio resultado:
+    // só faz sentido oferecer disciplinas que existem nesta escola.
+    const atual = el("filtroDisciplina").value;
+    el("filtroDisciplina").innerHTML = `<option value="">Todas</option>` +
+      dados.disciplinas.map(d => `<option value="${d}">${d}</option>`).join("");
+    el("filtroDisciplina").value = atual;
+
+    area.innerHTML = desenharAnalise(dados);
+    area.querySelectorAll("[data-copiar]").forEach(botao => {
+      botao.addEventListener("click", () => {
+        navigator.clipboard.writeText(botao.dataset.copiar);
+        botao.textContent = "copiado";
+        setTimeout(() => { botao.textContent = "copiar texto"; }, 1600);
+      });
+    });
+  }catch(erro){
+    area.innerHTML = `<div class="bloco"><div class="aviso aviso-erro">
+      <span>${erro.message}</span></div></div>`;
+  }
+}
+
+function desenharAnalise(d){
+  if(!d.total_respostas){
+    return `<div class="bloco"><h2 class="bloco-titulo">Ainda sem dados</h2>
+      <p class="bloco-ajuda" style="margin:0">
+        Corrija ao menos uma prova desta escola para o diagnóstico aparecer.</p></div>`;
+  }
+
+  let html = "";
+
+  // --- aviso de questões sem conteúdo -------------------------------
+  if(d.questoes_sem_conteudo){
+    html += `<div class="bloco"><div class="aviso-classificar">
+      <strong>${d.questoes_sem_conteudo} respostas ficaram de fora da análise por conteúdo.</strong>
+      São questões sem conteúdo cadastrado. Sem essa classificação o sistema só
+      consegue dizer “erraram a questão 15”, e não “erraram frações”.
+      Preencha o conteúdo ao criar a prova, na aba Provas.
+    </div></div>`;
+  }
+
+  // --- orientações --------------------------------------------------
+  if(d.orientacoes.length){
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">O que orientar às escolas</h2>
+      <p class="bloco-ajuda">Geradas apenas onde há amostra suficiente
+         (${d.minimo_confiavel} respostas ou mais).</p>` +
+      d.orientacoes.map(o => `
+        <div class="orientacao p-${o.prioridade}">
+          <div class="topo-linha">
+            <span class="etiqueta e-${o.prioridade}">${
+              o.prioridade === "critico" ? "prioridade" : "atenção"}</span>
+            <strong>${o.ano_nome} · ${o.conteudo}</strong>
+            <button class="btn-texto" style="margin-left:auto"
+                    data-copiar="${o.texto.replace(/"/g,"&quot;")}">copiar texto</button>
+          </div>
+          <p>${o.texto}</p>
+        </div>`).join("") + `</div>`;
+  }
+
+  // --- conteúdos ----------------------------------------------------
+  if(d.conteudos.length){
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">Acerto por conteúdo</h2>
+      <p class="bloco-ajuda">Do mais frágil para o mais consolidado.</p>` +
+      d.conteudos.map(c => `
+        <div class="barra-conteudo n-${c.situacao}">
+          <span class="rotulo">${c.conteudo}</span>
+          <span class="valor">${c.percentual_acerto ?? "—"}%</span>
+          <div class="trilha"><span style="width:${c.percentual_acerto ?? 0}%"></span></div>
+          <span class="marca-pequena">${c.respostas} resp · ${c.questoes} quest.
+            ${c.confiavel ? "" : '<span class="etiqueta e-amostra">amostra pequena</span>'}</span>
+        </div>`).join("") + `</div>`;
+  }
+
+  // --- comparativo entre anos --------------------------------------
+  if(d.comparativo_anos.length > 1){
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">Comparativo entre anos escolares</h2>
+      <p class="bloco-ajuda">Onde concentrar formação e material.</p>
+      <table><thead><tr><th>Ano</th><th class="numero">Turmas</th>
+        <th class="numero">Alunos</th><th class="numero">Média</th>
+        <th class="numero">Acerto</th><th>Conteúdo mais frágil</th></tr></thead><tbody>` +
+      d.comparativo_anos.map(a => `<tr>
+        <td><strong>${a.nome}</strong></td>
+        <td class="numero">${a.turmas}</td>
+        <td class="numero">${a.alunos}</td>
+        <td class="numero">${a.media !== null ? a.media.toFixed(1) : "—"}</td>
+        <td class="numero">${a.percentual_acerto ?? "—"}%</td>
+        <td>${a.conteudo_mais_fragil
+              ? `${a.conteudo_mais_fragil.conteudo}
+                 <span class="marca-pequena">(${a.conteudo_mais_fragil.percentual_acerto}%)</span>`
+              : "—"}</td>
+      </tr>`).join("") + `</tbody></table></div>`;
+  }
+
+  // --- questões -----------------------------------------------------
+  if(d.questoes.length){
+    html += `<div class="bloco">
+      <h2 class="bloco-titulo">Questões mais erradas</h2>
+      <p class="bloco-ajuda">Quando o erro se concentra numa mesma alternativa,
+         não houve chute: há um equívoco conceitual, e dá para saber qual.</p>
+      <table><thead><tr><th>Questão</th><th>Conteúdo</th><th>Ano</th>
+        <th class="numero">Acerto</th><th>Erro mais comum</th></tr></thead><tbody>` +
+      d.questoes.map(q => `<tr>
+        <td>Q${q.questao} <span class="marca-pequena">· ${q.prova}</span></td>
+        <td>${q.conteudo || "<span class='marca-pequena'>sem conteúdo</span>"}</td>
+        <td class="marca-pequena">${q.ano_escolar}</td>
+        <td class="numero"><strong>${q.percentual_acerto ?? "—"}%</strong></td>
+        <td>${q.distrator
+              ? `marcaram <strong>${q.distrator.alternativa}</strong>
+                 (${q.distrator.percentual}%) em vez de ${q.correta}
+                 ${q.distrator.concentrado ? '<span class="etiqueta e-atencao">erro concentrado</span>' : ""}`
+              : "—"}</td>
+      </tr>`).join("") + `</tbody></table></div>`;
+  }
+
+  return html;
+}
+
+function baixarAnaliseCsv(){
+  const escolaId = el("filtroEscola").value;
+  if(!escolaId) return;
+  const parametros = filtrosAnalise();
+  parametros.delete("dias");
+  window.open(`/api/escolas/${escolaId}/analise.csv?${parametros}`, "_blank");
+}
+
+/* ---------------- início ---------------- */
+function avisarPaginaSolta(){
+  /* Falhar em silêncio aqui era o pior comportamento possível: a tela
+     abria normal, o professor preenchia tudo, e só descobria o problema
+     ao clicar num botão — recebendo um "código 404" sem explicação. */
+  const faixa = el("faixaAviso");
+  faixa.classList.remove("oculto");
+  faixa.innerHTML = `
+    <strong>Esta página não está conectada ao sistema.</strong>
+    Ela precisa ser aberta em <code>http://localhost:8080</code>, o endereço que
+    aparece no terminal depois de rodar <code>python main.py</code>.
+    Abrir o arquivo com duplo clique ou pelo Live Server do VS Code não funciona —
+    o servidor é quem corrige as provas e guarda as notas.`;
+  document.querySelectorAll(".btn-principal").forEach(b => b.disabled = true);
+}
+
+async function iniciarSistema(){
+  try{
+    await carregarAnosEscolares();
+    await carregarEscolas();
+    await carregarSugestoesDeConteudo();
+  }catch(e){ mostrarAviso("avisoTurmas","erro",`<span>${e.message}</span>`); }
+}
+
+(async function iniciar(){
+  montarGrade();
+
+  let saude = null;
+  try{
+    const resposta = await fetch("/api/health");
+    // Um Live Server responde 404 em HTML aqui; o servidor certo
+    // responde JSON. É por isso que checamos o conteúdo, não só o status.
+    if(resposta.ok) saude = await resposta.json();
+  }catch(e){ /* file:// ou servidor fora do ar */ }
+
+  if(!saude || !saude.versao){
+    avisarPaginaSolta();
+    return;
+  }
+
+  if(saude.maximo_questoes){
+    maximoQuestoes = saude.maximo_questoes;
+    el("qtdQuestoes").max = maximoQuestoes;
+    el("ajudaQtd").textContent = `De 1 a ${maximoQuestoes} numa folha só.`;
+  }
+
+  const acesso = await (await fetch("/api/auth/estado")).json();
+  if(!acesso.autenticado){
+    mostrarTelaAcesso(acesso.precisa_primeira_conta);
+    return;
+  }
+  esconderTelaAcesso(acesso.nome, acesso.administrador, acesso.papel);
+  await iniciarSistema();
+})();
+</script>
+</body>
+</html>

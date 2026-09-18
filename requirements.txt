@@ -1,0 +1,30 @@
+# ------------------------------------------------------------------
+# Dependencias de producao
+# Versoes fixadas para builds reproduziveis no Cloud Run.
+# ------------------------------------------------------------------
+
+# --- Web framework -------------------------------------------------
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# --- Validacao de dados --------------------------------------------
+pydantic==2.10.4
+
+# --- Upload multipart/form-data ------------------------------------
+python-multipart==0.0.20
+
+# --- Visao computacional -------------------------------------------
+# headless = sem GUI/GTK/Qt -> imagem de container muito menor
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# --- Banco de dados ------------------------------------------------
+SQLAlchemy==2.0.36
+# Descomente para usar Postgres (Cloud SQL) em producao:
+# psycopg[binary]==3.2.3
+
+# --- Geracao do cartao-resposta ------------------------------------
+qrcode==8.0            # QR Code impresso no cartao
+pillow==11.0.0         # desenho da folha e conversao para PDF
+pypdf==5.1.0           # anexa a prova do professor antes do cartao
+pymupdf==1.28.2       # rasteriza e estampa o cartao-resposta do professor

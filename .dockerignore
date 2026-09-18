@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.git/
+.gitignore
+.idea/
+.vscode/
+.pytest_cache/
+tests/
+tools/
+amostras/
+*.md
+*.db
+*.sqlite3
