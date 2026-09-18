@@ -2270,6 +2270,17 @@ async def handler_http(_, exc: HTTPException) -> JSONResponse:
 # ==================================================================
 if __name__ == "__main__":
     import uvicorn
+    import webbrowser
+    from threading import Timer
 
     porta = int(os.getenv("PORT", "8080"))
+
+    # Função para abrir diretamente a página do GitHub Pages
+    def abrir_navegador():
+        webbrowser.open("https://avaliafrg-del.github.io/avalia-frg/")
+
+    # Aguarda 1.5 segundo para o servidor subir e abre o link
+    Timer(1.5, abrir_navegador).start()
+
+    # Inicia o servidor local FastAPI/Uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=porta, reload=False)
